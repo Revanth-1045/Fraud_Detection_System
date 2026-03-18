@@ -1,0 +1,15 @@
+FROM apache/spark:3.5.1
+
+USER root
+
+# Install system dependencies (needed for some python wheels)
+RUN apt-get update && \
+    apt-get install -y python3-pip && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+COPY streaming_job.py /app/streaming_job.py
+
+USER 185

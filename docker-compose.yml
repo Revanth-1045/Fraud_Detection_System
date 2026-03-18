@@ -1,0 +1,553 @@
+version: '3.8'
+
+x-airflow-common: &airflow-common
+  build:
+    context: ./src/airflow
+    dockerfile: Dockerfile
+  env_file:
+    - .env
+  user: "${AIRFLOW_UID}:0"
+  environment:
+    AIRFLOW__WEBSERVER__SECRET_KEY: "fix_csrf_secret_key_123"
+    AIRFLOW__API__AUTH_BACKENDS: "airflow.api.auth.backend.basic_auth"
+    AIRFLOW_CONN_MINIO_S3_CONN: "aws://minio:minio123@?endpoint_url=http%3A%2F%2Fminio%3A9000"
+  volumes:
+    - ./src/airflow/dags:/opt/airflow/dags
+    - ./src/airflow/logs:/opt/airflow/logs
+    - ./src/airflow/plugins:/opt/airflow/plugins
+    - ./config.yaml:/opt/airflow/config.yaml
+    - models_volume:/opt/airflow/models
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  deploy:
+    resources:
+      limits:
+        cpus: '0.50'
+        memory: 1G
+  networks:
+    - backend
+    - data
+
+x-spark-common: &spark-common
+  build:
+    context: ./src/spark
+    dockerfile: Dockerfile.cluster
+  networks:
+    - backend
+    - data
+
+services:
+  # === DATA TIER (Isolated) ===
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_multiple_dbs.sh:/docker-entrypoint-initdb.d/init_multiple_dbs.sh
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
+      interval: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 1G
+    networks:
+      - data
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - data
+
+  # === KAFKA CLUSTER (HA) ===
+  kafka-1:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9094:9093" # Host Access via SSL
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,SSL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-1:9092,SSL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,SSL:SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_KEY_PASSWORD: kafka-secret
+      KAFKA_SSL_KEY_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_CLIENT_AUTH: required
+    volumes:
+      - ./ssl:/etc/kafka/secrets
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 768M
+    networks:
+      - backend
+      - data
+
+  kafka-2:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9095:9093"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,SSL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-2:9092,SSL://localhost:9095
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,SSL:SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_KEY_PASSWORD: kafka-secret
+      KAFKA_SSL_KEY_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_CLIENT_AUTH: required
+    volumes:
+      - ./ssl:/etc/kafka/secrets
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 768M
+    networks:
+      - backend
+      - data
+
+  kafka-3:
+    image: confluentinc/cp-kafka:7.3.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9096:9093"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9092,SSL://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-3:9092,SSL://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,SSL:SSL
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.server.keystore.jks
+      KAFKA_SSL_KEYSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_KEY_PASSWORD: kafka-secret
+      KAFKA_SSL_KEY_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.server.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_PASSWORD: kafka-secret
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: kafka_password.txt
+      KAFKA_SSL_CLIENT_AUTH: required
+    volumes:
+      - ./ssl:/etc/kafka/secrets
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 768M
+    networks:
+      - backend
+      - data
+
+  # === SPARK CLUSTER (HA) ===
+  spark-master:
+    <<: *spark-common
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host spark-master
+    ports:
+      - "8085:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  spark-worker-1:
+    <<: *spark-common
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      SPARK_WORKER_MEMORY: 1280M
+      SPARK_WORKER_CORES: 2
+    depends_on:
+      - spark-master
+    ports:
+      - "8083:8081"
+    volumes:
+      - spark_checkpoints_vol:/tmp/spark-checkpoints
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+
+  spark-worker-2:
+    <<: *spark-common
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077
+    environment:
+      SPARK_WORKER_MEMORY: 1280M
+      SPARK_WORKER_CORES: 2
+    depends_on:
+      - spark-master
+    ports:
+      - "8084:8081"
+    volumes:
+      - spark_checkpoints_vol:/tmp/spark-checkpoints
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1.5G
+
+  spark-inference:
+    # Client Mode: Submits job to Cluster
+    <<: *spark-common
+    entrypoint: /bin/bash
+    command: /app/submit.sh
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      KAFKA_TOPIC: transactions
+      PRODUCER_SOURCE: GENERATOR
+      SPARK_LOCAL_DIRS: /tmp/spark
+      PYTHONUNBUFFERED: 1
+      AWS_ACCESS_KEY_ID: minio
+      AWS_SECRET_ACCESS_KEY: minio123
+      S3_ENDPOINT_URL: http://minio:9000
+      SPARK_LOCAL_IP: spark-inference
+      # Phase 10: Shadow/Canary Mode — set 'true' to log predictions without blocking
+      SHADOW_MODE: 'false'
+    ports:
+      - "4040:4040"   # Spark Driver / Application UI
+    user: root
+    depends_on:
+      - spark-master
+      - spark-worker-1
+      - spark-worker-2
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - minio
+    tmpfs:
+      - /tmp/spark:size=4G
+    volumes:
+      - spark_checkpoints_vol:/tmp/spark-checkpoints
+      - models_volume:/opt/spark/models
+      - ./src/producer/data:/app/data:ro
+      - dashboard_ram:/shared/dashboard
+      - ./src/spark/submit.sh:/app/submit.sh
+      - ./src/spark/streaming_job.py:/app/streaming_job.py
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0' # Local Mode Driver + Executors
+          memory: 3G
+
+  # === MIDDLE TIER (Shared Bus) ===
+  # Kafka Brokers defined above
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: always
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2G
+
+  airflow-triggerer:
+    <<: *airflow-common
+    command: triggerer
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    environment:
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    user: "0:0"
+
+  mlflow-server:
+    build:
+      context: ./src/airflow
+      dockerfile: Dockerfile
+    entrypoint: bash -c
+    command: >
+      "python -m mlflow server --backend-store-uri ${MLFLOW_DB_URL} --default-artifact-root file:///opt/airflow/models/artifacts --host 0.0.0.0"
+    ports:
+      - "5000:5000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - models_volume:/opt/airflow/models
+    networks:
+      - backend
+      - data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1G
+
+  producer:
+    build:
+      context: ./src/producer
+      dockerfile: Dockerfile
+    command: python main.py
+    env_file:
+      - .env
+    environment:
+      REPLAY_MODE: 'false'
+      KAFKA_BROKER_URL: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    volumes:
+      - ./src/producer/data:/app/data
+      - ./scripts/wait-for-it.sh:/app/scripts/wait-for-it.sh
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - backend
+
+  secure-gateway:
+    build:
+      context: ./src/gateway
+      dockerfile: Dockerfile
+    container_name: secure-gateway
+    environment:
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      REDIS_HOST: redis-ram-cache
+      KAFKA_BOOTSTRAP: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+      - redis-ram-cache
+    restart: unless-stopped
+    volumes:
+      - ./ssl:/etc/kafka/secrets
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - frontend
+      - backend
+
+  redis-ram-cache:
+    image: redis:7-alpine
+    container_name: redis-ram-cache
+    command: redis-server --maxmemory 4gb --maxmemory-policy allkeys-lru --save "" --appendonly no
+    ports:
+      - "6380:6379"
+    tmpfs:
+      - /data:size=4G
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 4G
+    networks:
+      - backend
+
+  # === FRONTEND TIER ===
+  web-app:
+    build:
+      context: ./src/web_app
+      dockerfile: Dockerfile
+    command: python app.py
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src/web_app:/app
+      - ./src/producer/data:/app/data
+      - dashboard_ram:/shared/dashboard
+      - models_volume:/app/models
+    environment:
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - producer
+      - secure-gateway
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - frontend
+      - backend
+
+  # === MONITORING TIER ===
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./src/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    depends_on:
+      - redis-exporter
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./src/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./src/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - backend
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    environment:
+      - REDIS_ADDR=redis://redis-ram-cache:6379
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis-ram-cache
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+    networks:
+      - backend
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend
+      - data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+volumes:
+  minio_data:
+  postgres_data:
+  models_volume:
+  spark_checkpoints_vol:
+  dashboard_ram:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs
+      o: size=512m
+
+networks:
+  frontend:
+  backend:
+  data:
+    internal: true

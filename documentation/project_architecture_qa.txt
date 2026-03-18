@@ -1,0 +1,79 @@
+# Project Architecture: Comprehensive Q&A
+
+This document provides direct, detailed answers regarding the specific architecture, code configurations, and Big Data concepts utilized in this pipeline.
+
+---
+
+### 1. Why did we use PySpark instead of Scala?
+While Scala runs natively on the JVM and is theoretically faster for pure Spark data manipulations, we chose **PySpark** because Python is the undisputed lingua franca of Artificial Intelligence and Machine Learning. 
+Our pipeline relies heavily on **XGBoost**, **LightGBM**, and the **SHAP** library for Explainable AI. These libraries either do not exist or are severely limited in the Scala environment. By using PySpark, we can seamlessly bridge massive distributed data engineering (using Spark DataFrames) with cutting-edge Python ML libraries (using Pandas UDFs and Scikit-Learn tools) within the exact same script.
+
+### 2. How many containers are running?
+The complete environment runs **24 interconnected Docker containers**. This includes the Kafka brokers, ZooKeeper, Spark Master/Workers, Airflow suite (Webserver, Scheduler, Worker, Triggerer), PostgreSQL, Redis, MinIO, secure gateways, web apps, and the Prometheus/Grafana monitoring stack.
+
+### 3. About the DAG Processes: How many Stages, Tasks, and Cores?
+- **DAG Definition:** We have one primary scheduled pipeline: `fraud_detection_training_enhanced`.
+- **Stages & Tasks:** The DAG is structured into 7 logical stages containing **11 distinct tasks**, heavily utilizing parallel processing:
+  1. *Extraction*: `fetch_data`
+  2. *Parallel Feature Engineering*: `temporal_features`, `statistical_features`, `velocity_features`
+  3. *Aggregation*: `merge_features`
+  4. *Balancing*: `preprocess_data` (incorporating SMOTE)
+  5. *Parallel ML Training*: `train_xgboost`, `train_lightgbm`, `train_catboost`
+  6. *Assembly*: `ensemble_models`
+  7. *Validation*: `evaluate_models`
+- **Core Allocations:**
+  - The `spark-inference` container (running the real-time stream) is allocated **2.0 CPUs / Cores** natively through Docker.
+  - The distributed `spark-worker-1` and `spark-worker-2` containers are explicitly configured via environment variables (`SPARK_WORKER_CORES: 2`) to allocate **2 cores and 1280M RAM** each for distributed computations.
+
+### 4. Where are we storing the dataset?
+Datasets exist across multiple tiers based on need:
+- **Hot/Live Data**: Stored in a Docker `tmpfs` (RAM Disk) mapped to `/shared/dashboard` for zero-latency UI reads.
+- **Cold/Batch Data**: Stored in **MinIO** (our S3-compatible Data Lake) inside the `datasets` bucket (e.g., `s3://datasets/historical_data.csv`).
+
+### 5. What Cluster Manager are we using?
+For the Big Data processing engine, we are using the **Spark Standalone Cluster Manager**. The `spark-master` container runs on port `7077` and independently manages the assignment of heavy computational tasks to the worker nodes.
+
+### 6. Explain the SQLs we have used in our project and how.
+We utilize SQL in two completely different paradigms:
+1. **Spark SQL (Programmatic):** Inside `streaming_job.py`, we use the Spark DataFrame API (which translates to Catalyst SQL execution plans under the hood) to handle continuous aggregations, windowing, and joins (e.g., `df.groupBy(window(col("timestamp"), "1 hour")).agg(count("*"))`).
+2. **PostgreSQL (Relational):** Inside the Airflow DAG (`fraud_detection_training_enhanced.py`), we use standard ANSI SQL via `psycopg2` to query the `feedback_labels` table. We execute a raw query: `SELECT transaction_id, amount, is_fraud... FROM feedback_labels WHERE scored_at >= NOW() - INTERVAL '7 days'` to implement our continuous Live Feedback Loop.
+
+### 7. What mode of execution are we following?
+We are following a **Lambda Architecture** approach:
+- **Streaming Mode:** Spark runs in **Structured Streaming Micro-Batch Mode**, processing tiny chunks of data every few seconds as they arrive from Kafka.
+- **Batch Mode:** Airflow executes the ML retraining processes sequentially in massive batches strictly on a schedule.
+
+### 8. What are the Storage Environments?
+- **MinIO**: Scalable Object Storage (Data Lake) for `.csv` datasets and `.json` model weights.
+- **PostgreSQL**: Relational storage for reliable ACID-compliant state tracking (Airflow task states, MLflow experiment metrics).
+- **Redis**: In-Memory Key-Value store for ultra-high-speed dictionary lookups (e.g., checking if an IP belongs to a Fraud Ring).
+- **tmpfs (RAM Volumes)**: Volatile, memory-based storage for temporary Spark checkpoints to prevent disk I/O bottlenecks.
+
+### 9. Explain the 5 V's of Big Data used in our project.
+- **Volume:** The system generates megabytes of data per minute, quickly scaling to massive gigabyte-level datasets requiring MinIO storage and distributed Spark processing.
+- **Velocity:** True real-time streaming using Apache Kafka and Spark Micro-batching ensures transactions are ingested, processed, and flagged within a sub-second timeframe.
+- **Variety:** The pipeline handles raw, semi-structured JSON payloads from Kafka, purely tabular CSV structures in the Data Lake, and unstructured binary model artifacts (`.pkl`, `.cbm`).
+- **Veracity:** Data is messy. To ensure truthfulness, the system uses `RobustScaler` to eliminate extreme monetary outliers and uses synthetic balancing (SMOTE) to ensure the ML model isn't biased by the inherent rarity of fraudulent transactions.
+- **Value:** The ultimate goal: catching financial fraud instantly, providing direct, measurable monetary savings to the business.
+
+### 10. What Resource Manager are we using?
+At the infrastructure level, **Docker Compose** acts as the resource manager, enforcing strict CPU (`cpus: 1.0`) and memory (`memory: 1.5G`) limits on containers so they don't starve each other. At the processing level, the **Spark Standalone Master** manages RAM/Core allocations for specific data jobs.
+
+### 11. Workflow Monitoring
+- **Apache Airflow UI**: Monitors the success, failure, and execution time of the complex DAG task chains.
+- **MLflow UI**: Tracks the exact statistical health, ROC-AUC curves, and Precision/Recall scores of the predictive models over time.
+- **Prometheus & Grafana**: Monitors the physical hardware metrics (CPU spikes, memory usage) and Kafka stream throughput rates automatically.
+
+### 12. Are we using PyAsset?
+No. The project uses standard Airflow `PythonOperator` nodes to manage the DAG dependencies, rather than Dagster's Software-Defined Assets or Airflow's newer Dataset-driven scheduling.
+
+### 13. Why are we *only* using Spark?
+We **aren't** only using Spark! This is a hybrid pipeline. We use **Spark** strictly for the heavy data engineering, Kafka ingestion, and high-velocity windowing (because it scales horizontally). However, for the actual Machine Learning, we hand the Spark DataFrames over to native Python libraries (**XGBoost**, **LightGBM**, **SHAP**, **Pandas**) because Spark's native `SparkML` library is vastly inferior when dealing with tree-based explainability and cutting-edge tabular algorithms.
+
+### 14. Where are we using compressions?
+Kafka automatically handles background stream compression to reduce network payload sizes. Furthermore, large ML model files and scalers are converted into serialized binaries (e.g., `pickle` files) before being piped to S3/MinIO.
+
+### 15. Types of File Systems in our project
+1. **Object Storage File System (S3 Protocol)** via MinIO.
+2. **In-Memory File System (tmpfs)** via Docker RAM mounts for hyper-fast localized read/writes.
+3. **Block Storage / ext4** standard Linux file systems natively attached to Docker Virtual Volumes (used by PostgreSQL and Kafka to ensure durability).

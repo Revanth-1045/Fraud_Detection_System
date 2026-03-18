@@ -1,0 +1,80 @@
+# Dataset Architecture & Real-World Fraud Detection Scenarios
+
+This document explains the exact dataset flowing through our real-time pipeline, how raw data is transformed into Machine Learning features, and how those features are used to detect real-world fraud scenarios.
+
+---
+
+## 1. The Raw Dataset (Data Generation)
+
+The dataset begins as a continuous stream of JSON payloads synthesized by the Python Producer. Each payload represents a single credit card transaction with the following raw fields:
+
+- **`transaction_id`**: A unique UUID for tracking.
+- **`user_id`**: An integer (1-100) representing a distinct customer.
+- **`amount`**: The monetary value of the transaction.
+- **`timestamp`**: The exact ISO datetime the transaction occurred.
+- **`lat` & `lon`**: The GPS coordinates (Latitude & Longitude) of where the transaction was physically made.
+- **`ip_address`**: The IPv4 address of the device making the digital request.
+- **`device_id`**: A unique UUID representing the hardware (e.g., a specific smartphone).
+- **`merchant_id`**: An identifier for the store/vendor (e.g., "M_042").
+
+---
+
+## 2. The Engineered Dataset (Machine Learning Features)
+
+Raw data isn't enough for a sophisticated AI model. As the raw stream flows into Apache Spark, complex mathematical and stateful operations are applied to generate 14 specific "Engineered Features" that the XGBoost model actually reads:
+
+### Temporal & Cyclical Features
+Machine Learning models struggle with standard timestamps. Spark converts time into cyclical math:
+1. **`hour_sin`**: The sine wave representation of the hour.
+2. **`hour_cos`**: The cosine wave representation. *(Together, these tell the model that 11:59 PM is adjacent to 12:01 AM).*
+3. **`day_of_week`**: Integer (0-6).
+4. **`is_weekend`**: Binary flag (1 if Saturday/Sunday, 0 otherwise).
+
+### Velocity & Stateful Features
+These features require Spark to remember what happened in the past:
+5. **`tx_count_1h`**: How many transactions this specific user made in the last 60 minutes.
+6. **`tx_count_24h`**: Extrapolated daily transaction count.
+7. **`amount_last_1h`**: The total monetary sum spent by the user in the last 60 minutes.
+8. **`amount_x_tx_count`**: A cross-feature multiplying current amount by the 1-hour frequency.
+
+### Statistical Deviation Features
+These features compare the current transaction against the user's historical baseline:
+9. **`user_amount_mean`**: The historical average spend for this specific user.
+10. **`user_amount_std`**: The standard deviation (variance) of the user's spending habits.
+11. **`amount_z_score`**: A statistical measure of how incredibly unusual this specific amount is compared to their normal behavior.
+12. **`avg_diff_ratio`**: The ratio of the current amount to the user's historical average.
+13. **`amount` (Scaled)**: The raw amount passed through a *RobustScaler* to normalize massive outliers so they don't break the model.
+
+### Risk Metrics
+14. **`terminal_fraud_rate`**: A statically tracked baseline of how often fraud occurs at this specific type of terminal.
+
+---
+
+## 3. Real-World Fraud Detection Scenarios
+
+Our pipeline doesn't just rely on the AI. It uses a **Hybrid Detection System**, combining the XGBoost Machine Learning model with strict, hardcoded rule-based heuristics. Here is how they catch fraud in practice:
+
+### Scenario A: "The Impossible Travel" (Velocity Fraud)
+**Real-World Example**: A user buys a coffee in New York at 8:00 AM. At 8:15 AM, the same card is swiped for a television in London.
+**How we catch it**: 
+- Spark calculates the *Haversine Distance* between the coordinates of the current transaction and the last known location/center.
+- The system calculates the `distance_from_center`. If the distance is physically impossible to traverse in the given timeframe (e.g., > 20,000 km in our threshold tests), the system forcefully bypasses the ML model and flags it instantly with the reason: `Impossible Travel (Distance: X km)`.
+
+### Scenario B: "The Fraud Ring" (Collusion Detection)
+**Real-World Example**: A hacker purchases a list of 50 stolen credit cards online. To test them, they run tiny $1.00 transactions on all 50 cards from the exact same laptop and home Wi-Fi.
+**How we catch it**:
+- The transaction amounts are too small to trigger the AI's `amount_z_score` anomaly detection.
+- However, Spark's heuristic engine groups transactions by `device_id` and `ip_address` across all users in the micro-batch.
+- It notices that `user_id=14` and `user_id=89` are suddenly using the exact same hardware (`device_id`).
+- It flags the transaction as fraud with the reason `Entity Risk (Shared Device; Shared IP)`.
+
+### Scenario C: "The Account Takeover" (AI Behavioral Drift)
+**Real-World Example**: A user normally spends ~$40/week on groceries and gas. Suddenly, at 3:00 AM on a Tuesday, they attempt to buy a $4,500 gaming laptop.
+**How we catch it**:
+- No physical rules are broken (same home IP, same city).
+- The transaction hits the **XGBoost AI Model**.
+- Spark calculates the `amount_z_score` and finds it is +5 standard deviations away from the `user_amount_mean`. 
+- Spark calculates the `hour_sin` and notices extreme deviation from the user's normal active hours.
+- The model's decision trees heavily weight the extreme `z_score`, the time anomaly, and the massive `avg_diff_ratio`.
+- XGBoost predicts `1`. The transaction is flagged with the reason `Model Flagged`.
+- Clicking the **🧠 SHAP** button on the dashboard will visually show exactly how much the `amount_z_score` pushed the AI to decline the purchase.

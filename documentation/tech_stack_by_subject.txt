@@ -1,0 +1,47 @@
+# Project Tech Stack by Subject Domain
+
+This project is a massive, multi-disciplinary system. To understand it fully, it helps to break down the technology stack by the specific academic or professional subjects they relate to.
+
+---
+
+## 1. Machine Learning & Data Science 🧠
+*Subject Focus: Developing predictive models, statistical analysis, and understanding feature importance.*
+
+- **XGBoost**: The core algorithm used for the fraud detection model. It is an implementation of "Gradient Boosted Decision Trees" designed for speed and performance.
+- **Scikit-Learn**: Used for preprocessing, specifically the `RobustScaler`, which ensures that massive monetary outliers don't break the model's accuracy.
+- **SHAP (SHapley Additive exPlanations)**: The mathematical technique (based on game theory) used to provide visibility into the XGBoost "black box" model, allowing the frontend to explain *why* a specific transaction was flagged.
+- **SMOTE (Synthetic Minority Over-sampling Technique)**: An algorithmic strategy used to balance the training data since actual fraud is statistically very rare compared to normal traffic.
+
+## 2. Big Data & Distributed Systems 🌐
+*Subject Focus: Handling data volume, velocity, and variety across clusters of computers.*
+
+- **Apache Kafka**: A distributed publish-subscribe messaging system. It buffers the incoming stream of thousands of synthetic transactions per second.
+- **Apache Spark (PySpark)**: A unified analytics engine. Specifically, **Spark Structured Streaming** is used to ingest the live Kafka feed and perform stateful transformations (like calculating 1-hour transaction velocity) without running out of memory.
+- **Apache ZooKeeper**: The coordination service that acts as the "manager" for the distributed Kafka nodes, handling elections and state management.
+
+## 3. Database Management Systems (DBMS) 🗄️
+*Subject Focus: Storing, retrieving, and architecting persistent data storage structures.*
+
+- **PostgreSQL**: A classic, highly reliable relational SQL database. It serves as the durable backend for Airflow and MLflow to record their structured task and tracking histories.
+- **Redis**: A NoSQL, in-memory key-value data structure store. It is utilized here as a high-speed cache so the system can verify IP addresses and user profiles in microseconds.
+- **MinIO (S3-Compatible Object Storage)**: A storage architecture that manages data as "objects" rather than file hierarchies. It behaves like an AWS S3 bucket, serving as the system's "Data Lake" for storing massive model artifacts (`.pkl` / `.json`) and raw logs.
+
+## 4. DevOps, Cloud Computing & Orchestration 🐳
+*Subject Focus: Infrastructure as code, containerization, and continuous integration/continuous deployment (CI/CD) pipelines.*
+
+- **Docker & Docker Compose**: Every single component in this project runs inside isolated containers. `docker-compose.yml` is the "Infrastructure as Code" script that links all 20+ containers (networking, volume sharing, resource limits) on a single host.
+- **Apache Airflow**: The workflow scheduling platform. It runs the automated **MLOps** (Machine Learning Operations) pipeline, automatically deciding when to collect new data, retrain the XGBoost model, and deploy it to production.
+- **MLflow**: A centralized tracking server for MLOps. It registers every time the model is trained, recording its exact test accuracy and precision graphs.
+
+## 5. Software Engineering (Backend & UI) 💻
+*Subject Focus: Web development, API design, and user interface architecture.*
+
+- **Python**: The primary programming language utilized across the entire project, spanning the data generator, Spark scripts, Airflow DAGs, and the web backend.
+- **Flask**: A lightweight Python web framework used to build the `/api/live` and `/api/explain` RESTful APIs that serve data to the dashboard.
+- **HTML, CSS, JavaScript**: The foundation of the user interface. It renders the live heartbeat tables, the interactive graphs, and the animated SHAP result modals without requiring heavy frontend frameworks like React.
+
+## 6. Information Security & Cryptography 🔒
+*Subject Focus: Protecting data in transit and ensuring system integrity.*
+
+- **Symmetric Encryption (Fernet/Cryptography library)**: The Python Producer script encrypts the raw JSON transactions payload using a secure key before sending them to Kafka.
+- **Secure Gateway**: A dedicated microservice whose sole academic purpose is to sit between the raw Kafka stream and the Spark data processor to parse, validate, and decrypt the payloads safely.

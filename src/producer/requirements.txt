@@ -1,0 +1,7 @@
+confluent-kafka
+faker
+xgboost
+scikit-learn
+pandas
+pyarrow
+cryptography

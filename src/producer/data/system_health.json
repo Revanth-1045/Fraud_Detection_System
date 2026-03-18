@@ -1,0 +1,1 @@
+{"timestamp": "2026-02-16T15:02:51.711638", "batch_id": 101, "drift_score": 12.972736363636361, "current_mean": 698.6368181818181, "status": "DRIFT_CRITICAL", "baseline_mean": 50.0}

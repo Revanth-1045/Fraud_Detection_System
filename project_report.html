@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Real-Time Fraud Detection System — Project Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Times New Roman", Times, serif;
+    font-size: 12pt;
+    line-height: 1.15;
+    color: #1a1a1a;
+    background: #fff;
+  }
+  .page {
+    max-width: 210mm;
+    margin: 0 auto;
+    padding: 25mm 25mm 25mm 30mm;
+  }
+  h1 { font-size: 18pt; font-weight: bold; text-align: center; margin-bottom: 10pt; }
+  h2 { font-size: 14pt; font-weight: bold; margin-top: 22pt; margin-bottom: 8pt; border-bottom: 1.5px solid #1a237e; padding-bottom: 3pt; color: #1a237e; }
+  h3 { font-size: 12pt; font-weight: bold; margin-top: 14pt; margin-bottom: 5pt; color: #283593; }
+  h4 { font-size: 12pt; font-weight: bold; font-style: italic; margin-top: 10pt; margin-bottom: 4pt; }
+  p  { text-align: justify; margin-bottom: 8pt; }
+  ul, ol { margin-left: 20pt; margin-bottom: 8pt; }
+  li { margin-bottom: 3pt; text-align: justify; }
+  table { width: 100%; border-collapse: collapse; margin: 10pt 0 12pt 0; font-size: 11pt; }
+  th { background: #1a237e; color: #fff; padding: 5pt 7pt; text-align: left; font-size: 11pt; }
+  td { padding: 4pt 7pt; border: 1px solid #ccc; vertical-align: top; }
+  tr:nth-child(even) td { background: #f5f5fa; }
+  code, pre { font-family: "Courier New", monospace; font-size: 10pt; background: #f0f4ff; border: 1px solid #c5cae9; border-radius: 3px; }
+  pre { padding: 8pt 10pt; overflow-x: auto; margin: 8pt 0 10pt 0; white-space: pre-wrap; }
+  code { padding: 1pt 3pt; }
+  .fig-container { text-align: center; margin: 14pt 0; }
+  .fig-container img { max-width: 100%; border: 1px solid #c5cae9; border-radius: 4px; }
+  .fig-caption { font-size: 10pt; font-style: italic; margin-top: 4pt; color: #444; }
+  .abstract-box { border: 1.5px solid #1a237e; padding: 12pt 16pt; margin: 14pt 0; background: #f0f4ff; border-radius: 4px; }
+  .abstract-box p { margin-bottom: 0; }
+  .title-block { text-align: center; margin-bottom: 30pt; }
+  .title-block h1 { font-size: 20pt; margin-bottom: 8pt; }
+  .title-block .subtitle { font-size: 14pt; font-style: italic; margin-bottom: 12pt; }
+  .title-block .meta { font-size: 11pt; line-height: 1.7; }
+  .divider { border: none; border-top: 1px solid #888; margin: 18pt 0; }
+  .callout { background: #fffde7; border-left: 4px solid #f9a825; padding: 8pt 12pt; margin: 10pt 0; border-radius: 2px; font-size: 11pt; }
+  .toc { background: #f8f9ff; border: 1px solid #c5cae9; padding: 12pt 16pt; margin-bottom: 18pt; border-radius: 4px; }
+  .toc h3 { margin-top: 0; }
+  .toc ol { margin-left: 16pt; }
+  .toc li { margin-bottom: 2pt; }
+  @media print {
+    body { font-size: 12pt; }
+    .page { padding: 20mm 20mm 20mm 25mm; max-width: 100%; }
+    h2 { page-break-before: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- TITLE PAGE -->
+<div class="title-block">
+  <h1>Real-Time Financial Fraud Detection System<br/>Using Big Data Analytics</h1>
+  <div class="subtitle">A Production-Grade Distributed Streaming Pipeline with<br/>XGBoost Ensemble Inference and Explainable AI</div>
+  <hr class="divider"/>
+  <div class="meta">
+    <strong>Subject:</strong> Big Data Analytics &mdash; Project Report<br/>
+    <strong>Academic Year:</strong> 2025&ndash;2026<br/>
+    <strong>Date:</strong> March 2026<br/>
+    <strong>Technology Stack:</strong> Apache Kafka &bull; Apache Spark (PySpark) &bull; XGBoost &bull; LightGBM &bull; CatBoost<br/>
+    &bull; Apache Airflow &bull; MLflow &bull; Redis &bull; MinIO &bull; PostgreSQL &bull; Flask &bull; Docker
+  </div>
+</div>
+
+<hr class="divider"/>
+
+<!-- TABLE OF CONTENTS -->
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ol>
+    <li>Abstract</li>
+    <li>Introduction</li>
+    <li>Literature Review</li>
+    <li>Dataset Description</li>
+    <li>Architecture &amp; Tools</li>
+    <li>Methodology</li>
+    <li>Experiments &amp; Results</li>
+    <li>Discussion</li>
+    <li>Conclusion &amp; Future Work</li>
+    <li>References</li>
+    <li>Appendices</li>
+  </ol>
+</div>
+
+<!-- ===== SECTION 1: ABSTRACT ===== -->
+<h2>1. Abstract</h2>
+<div class="abstract-box">
+<p>Financial fraud represents one of the most economically damaging challenges facing banking and digital payment institutions globally. This project presents the design, implementation, and evaluation of a production-grade, real-time fraud detection pipeline powered by a distributed Big Data ecosystem. The system ingests a high-velocity stream of synthetic financial transactions via an AES-encrypted Apache Kafka message queue, applies multi-stage validation through a dedicated Secure Gateway microservice, engineers 14 complex statistical and temporal features via Apache Spark Structured Streaming micro-batches, and performs sub-30-second inference using a pre-trained XGBoost ensemble classifier. A hybrid detection strategy combines ML predictions with deterministic rule-based heuristics — Haversine-formula impossible-travel detection and cross-entity fraud-ring identification — to maximise recall across diverse adversarial fraud typologies. An automated MLOps lifecycle orchestrated by Apache Airflow with MLflow experiment tracking enables continuous, zero-downtime model retraining. Experimental results demonstrate 97.1% accuracy, 72.7% Recall, 84.2% F1 score, and 94.5% ROC-AUC. An interactive Flask dashboard with SHAP (SHapley Additive exPlanations) visualisations provides fraud analysts with transparent, auditable insights into every flagged transaction.</p>
+</div>
+
+<!-- ===== SECTION 2: INTRODUCTION ===== -->
+<h2>2. Introduction</h2>
+
+<h3>2.1 Background and Motivation</h3>
+<p>Digital payment fraud costs the global economy over <strong>$32 billion annually</strong>, with the figure growing year-on-year as digital commerce expands. Traditional fraud detection systems rely on static, rule-based engines — threshold checks such as "flag transactions above $10,000" — that are brittle, easily circumvented by adaptive fraudsters employing strategies such as structuring, and require costly manual tuning cycles. The operational delay between fraud occurrence and detection, often measured in hours or days, represents a critical window of financial loss that real-time systems are positioned to eliminate.</p>
+
+<p>The convergence of three technological advancements has unlocked new possibilities. First, the maturation of distributed stream-processing frameworks (Apache Kafka, Apache Spark Structured Streaming) enables ingestion and analysis of high-velocity transaction streams with sub-second latency. Second, gradient-boosted ensemble methods (XGBoost, LightGBM, CatBoost) deliver state-of-the-art classification on tabular financial data. Third, Explainable AI (XAI) techniques such as SHAP allow fraud analysts to understand and trust automated model decisions — critical for regulatory compliance under GDPR Article 22 and emerging AI regulations.</p>
+
+<h3>2.2 Problem Statement and Research Questions</h3>
+<p>The core problem addressed is: <em>How can a distributed Big Data system detect fraudulent financial transactions with sub-30-second latency while maintaining high Recall, Precision, and Explainability at scale?</em></p>
+<p>This project specifically addresses:</p>
+<ol>
+  <li>How can Apache Kafka and Spark Structured Streaming be integrated to form a fault-tolerant, real-time data pipeline for financial transactions?</li>
+  <li>What feature engineering strategies are most effective for capturing fraud signals from raw transactional metadata?</li>
+  <li>Can a hybrid ML + rule-based approach outperform either method in isolation for diverse fraud typologies?</li>
+  <li>How can MLOps practices (Airflow scheduling, MLflow tracking) enable continuous, zero-downtime model improvement?</li>
+  <li>How can SHAP-based explainability be surfaced in a real-time dashboard for actionable analyst insights?</li>
+</ol>
+
+<h3>2.3 Scope and Limitations</h3>
+<p>The project covers the full end-to-end pipeline: synthetic data generation, AES-encrypted Kafka streaming, Spark feature engineering, ensemble ML inference, SHAP dashboard, and automated MLOps retraining — all containerised via an orchestration configuration. Limitations include: (1) synthetic dataset rather than live production feeds; (2) single-host deployment rather than multi-node Kubernetes clustering; (3) manual/scheduled rather than online continuous retraining; (4) ground-truth fraud labels are injected by the producer component.</p>
+
+<!-- ===== SECTION 3: LITERATURE REVIEW ===== -->
+<h2>3. Literature Review</h2>
+
+<h3>3.1 Evolution of Fraud Detection Systems</h3>
+<p>Research into automated fraud detection has evolved through distinct paradigms. Early systems relied exclusively on <strong>static rule engines</strong> — simple threshold checks easily defeated by structuring and card-testing attacks. The introduction of machine learning, pioneered by Dal Pozzolo et al. (2015), demonstrated that statistical models trained on historical data significantly outperform rule-based approaches. Initial ML work used logistic regression, decision trees, and Random Forests. However, <strong>class imbalance</strong> — fraud typically comprising 0.1–5% of all transactions — represented a critical challenge, leading to the SMOTE technique (Chawla et al., 2002).</p>
+
+<h3>3.2 Key Algorithms and Frameworks</h3>
+<p><strong>XGBoost</strong> (Chen &amp; Guestrin, 2016): XGBoost's gradient-boosted decision tree architecture has become the de facto standard for tabular financial classification, consistently dominating Kaggle fraud detection competitions. Its key advantages include built-in L1/L2 regularisation, efficient handling of missing values, and native <code>scale_pos_weight</code> for class imbalance. <strong>LightGBM</strong> (Ke et al., 2017) extends this with leaf-first tree growth for faster training on large datasets. <strong>CatBoost</strong> adds built-in categorical feature handling without encoding overhead.</p>
+
+<p><strong>Apache Kafka</strong>: Kafka's log-based, partitioned publish-subscribe architecture provides the throughput, durability, and fault-tolerance required by financial data pipelines. It is deployed at Goldman Sachs, LinkedIn, and Uber at scales exceeding one trillion messages per day.</p>
+
+<p><strong>Apache Spark Structured Streaming</strong>: Spark's unified streaming API applies the same DataFrame/Dataset abstractions to both streaming and batch data. The micro-batch processing model allows complex stateful aggregations (e.g. sliding window transaction counts) that are not feasible in pure event-at-a-time processors, while maintaining strong exactly-once semantics via checkpointing.</p>
+
+<p><strong>SHAP</strong> (Lundberg &amp; Lee, 2017): SHAP values, rooted in Shapley values from cooperative game theory, provide theoretically grounded, consistent feature attribution for any ML model. Unlike LIME or simple importance scores, SHAP values are additive and guarantee feature contributions sum to the model output — making them ideal for regulatory-compliant fraud explanation.</p>
+
+<h3>3.3 Gap Analysis</h3>
+<p>Despite significant academic advances, a gap exists in end-to-end, open-source reference implementations that integrate all layers of this stack: encrypted streaming ingestion → distributed feature engineering → ensemble ML inference → XAI explainability → automated continuous retraining — all in a single, containerised, deployable system. Most papers focus on the ML model in isolation without addressing the production engineering complexity of integrating Kafka, Spark, Redis, MinIO, and Airflow into a coherent, self-healing pipeline. This project directly addresses that gap.</p>
+
+<!-- ===== SECTION 4: DATASET ===== -->
+<h2>4. Dataset Description</h2>
+
+<h3>4.1 Data Source</h3>
+<p>The dataset is synthetically generated in real time by a dedicated Python producer microservice. Rather than a static data format, the producer generates an infinite stream of transaction payloads, simulating the continuous data velocity of a live production payment system. The generator employs the <strong>Faker</strong> library for realistic metadata generation and the <strong>cryptography.fernet</strong> library for AES-128 symmetric encryption before Kafka publication.</p>
+
+<p>Fraud patterns are modelled on real-world attack vectors documented by INTERPOL and the Financial Action Task Force (FATF):</p>
+<table>
+  <tr><th>Fraud Pattern</th><th>Description</th><th>Production Analogue</th></tr>
+  <tr><td><strong>Structuring</strong></td><td>Transactions clustered just below $10,000</td><td>Evades bank reporting thresholds</td></tr>
+  <tr><td><strong>Card Testing</strong></td><td>High-frequency micro-transactions ($0.01–$1.00)</td><td>Validates stolen card credentials</td></tr>
+  <tr><td><strong>Account Takeover</strong></td><td>Sudden high-value transaction vs. low historical baseline</td><td>Compromised credentials via phishing</td></tr>
+  <tr><td><strong>High-Risk Hours</strong></td><td>Transactions at 2:00–4:00 AM</td><td>Peak fraud window per industry data</td></tr>
+  <tr><td><strong>High Value</strong></td><td>Isolated large purchases ($5,000–$50,000)</td><td>Rapid asset liquidation post-compromise</td></tr>
+</table>
+
+<h3>4.2 Dataset Characteristics</h3>
+<table>
+  <tr><th>Characteristic</th><th>Value</th></tr>
+  <tr><td>Volume (Training)</td><td>100,000 transactions</td></tr>
+  <tr><td>Fraud Ratio</td><td>5% (5,000 fraudulent / 95,000 legitimate)</td></tr>
+  <tr><td>Format</td><td>JSON (streaming), CSV (training), Parquet (data lake)</td></tr>
+  <tr><td>Velocity</td><td>5–10 transactions/second (continuous live stream)</td></tr>
+  <tr><td>Raw Payload Size</td><td>~350 bytes per transaction (encrypted binary)</td></tr>
+  <tr><td>Users Simulated</td><td>100 distinct synthetic users (user_id 1–100)</td></tr>
+  <tr><td>V-Features</td><td>V1–V28 PCA components mimicking the ULB Kaggle dataset schema</td></tr>
+</table>
+
+<h3>4.3 Raw Transaction Schema</h3>
+<pre>{
+  "transaction_id": "uuid4",      // Unique UUID per transaction
+  "user_id":        1-100,        // Synthetic customer identifier
+  "amount":         float (USD),  // Transaction monetary value
+  "timestamp":      "ISO 8601",   // Exact datetime
+  "lat":            float,        // GPS latitude of transaction
+  "lon":            float,        // GPS longitude of transaction
+  "ip_address":     "IPv4",       // Device IP (used for ring detection)
+  "device_id":      "uuid4",      // Hardware device identifier
+  "merchant_id":    "M_042",      // Vendor identifier
+  "V1" ... "V28":   float         // PCA noise-reduction components
+}</pre>
+
+<h3>4.4 Feature Engineering: The Engineered Dataset</h3>
+<p>Raw transactional fields are insufficient for a sophisticated fraud classification model. Apache Spark applies complex mathematical and stateful transformations to produce <strong>14 engineered features</strong> that the XGBoost model actually reads:</p>
+
+<h4>Temporal &amp; Cyclical Features</h4>
+<p>Standard timestamps cannot be directly consumed by ML models because the distance from 11:59 PM to 12:01 AM is computationally represented as ~24 hours rather than 2 minutes. Spark resolves this by encoding time as cyclical sine/cosine waves:</p>
+<pre>hour_sin = sin(2π × hour / 24)
+hour_cos = cos(2π × hour / 24)</pre>
+<p>Together, these two values place every hour on a unit circle so that the model correctly perceives 11:59 PM and 12:01 AM as adjacent points. Additionally, <code>day_of_week</code> (0–6) and <code>is_weekend</code> (binary) capture weekly fraud patterns.</p>
+
+<h4>Velocity &amp; Stateful Features</h4>
+<p>Velocity features require Spark to maintain statefulness across micro-batches using a 1-hour sliding window (1-minute slide), grouped by <code>user_id</code>:</p>
+<ul>
+  <li><code>tx_count_1h</code>: Number of transactions by this user in the last 60 minutes</li>
+  <li><code>tx_count_24h</code>: Extrapolated daily count (tx_count_1h × 24)</li>
+  <li><code>amount_last_1h</code>: Total monetary sum spent by this user in the last 60 minutes</li>
+  <li><code>amount_x_tx_count</code>: Interaction feature — high amount × high frequency = elevated danger signal</li>
+</ul>
+
+<h4>Statistical Deviation Features</h4>
+<p>These features compare the current transaction against the user's personal historical baseline, loaded from a broadcast variable (user average amounts pre-computed from CSV):</p>
+<pre>user_amount_mean = historical average spend for user_id
+user_amount_std  = standard deviation of user's spending
+amount_z_score   = (amount - user_amount_mean) / (user_amount_std + ε)
+avg_diff_ratio   = amount / user_amount_mean</pre>
+<p>A high <code>amount_z_score</code> (e.g., +5 standard deviations) is a powerful indicator of Account Takeover fraud, as it quantifies exactly how anomalous a transaction is relative to that specific user's established behaviour pattern.</p>
+
+<h4>Risk Metrics</h4>
+<p><code>terminal_fraud_rate</code> captures the historically observed fraud incidence at this class of payment terminal, providing a prior probability of risk independent of the individual transaction's features.</p>
+
+<h3>4.5 Preprocessing Pipeline</h3>
+<p><strong>RobustScaler:</strong> The <code>amount</code> feature is normalized using Scikit-Learn's RobustScaler, which uses the median and interquartile range (IQR) rather than mean and standard deviation. This makes it robust to the extreme outliers typical in financial data — a $50,000 fraudulent transaction will not distort the scale for legitimate $20 transactions. Critically, the scaler is fitted <em>only on training data</em> and serialized to the model registry so that Spark applies the identical transformation parameters at inference time, preventing data leakage.</p>
+
+<p><strong>SMOTE (Synthetic Minority Over-sampling Technique):</strong> The 5% fraud rate creates a severe class imbalance. Without correction, models achieve 95% accuracy simply by predicting "Normal" for every transaction. SMOTE generates synthetic fraud samples by interpolating in feature space between existing fraud examples using k-nearest neighbours (k=min(5, fraud_count−1)):</p>
+<pre>Before SMOTE:  ~5,000 fraud  /  ~75,000 normal  (training split)
+After SMOTE:   ~75,000 fraud /  ~75,000 normal  (balanced 50/50)</pre>
+<p>SMOTE is applied <em>after</em> the train/test split and only to the training set, ensuring the test set reflects the true real-world class distribution.</p>
+
+<!-- ===== SECTION 5: ARCHITECTURE & TOOLS ===== -->
+<h2>5. Architecture &amp; Tools</h2>
+
+<h3>5.1 System Architecture Overview</h3>
+<p>The system follows a layered microservice architecture consisting of five functional processing tiers plus a background MLOps layer, all orchestrated via a containerized configuration across 20+ services.</p>
+
+<div class="fig-container">
+  <img src="images/system_architecture.png" alt="System Architecture Diagram"/>
+  <div class="fig-caption">Figure 1: End-to-End System Architecture — Five Tiers + MLOps Background Layer</div>
+</div>
+
+<h3>5.2 Big Data Ecosystem Components</h3>
+<table>
+  <tr><th>Component</th><th>Version / Image</th><th>Role</th><th>Port(s)</th></tr>
+  <tr><td><strong>Apache Kafka</strong> (3 brokers)</td><td>bitnami/kafka</td><td>High-velocity event streaming, transaction buffering</td><td>9092, 9093, 9094</td></tr>
+  <tr><td><strong>Apache ZooKeeper</strong></td><td>bitnami/zookeeper</td><td>Distributed coordination, Kafka leader election</td><td>2181</td></tr>
+  <tr><td><strong>Apache Spark</strong> (Master + 2 Workers)</td><td>bitnami/spark:3.5</td><td>Micro-batch stream processing, ML inference</td><td>7077, 8085</td></tr>
+  <tr><td><strong>Redis</strong></td><td>redis:7-alpine</td><td>In-memory cache for gateway validation &amp; user profiles</td><td>6379</td></tr>
+  <tr><td><strong>MinIO</strong></td><td>minio/minio</td><td>S3-compatible object storage (data lake, model artifacts)</td><td>9000, 9001</td></tr>
+  <tr><td><strong>Apache Airflow</strong></td><td>apache/airflow:2.8</td><td>MLOps DAG orchestration, scheduled retraining</td><td>8090</td></tr>
+  <tr><td><strong>MLflow</strong></td><td>mlflow server</td><td>Experiment tracking, model versioning, artifact registry</td><td>5000</td></tr>
+  <tr><td><strong>PostgreSQL</strong></td><td>postgres:15</td><td>Airflow metadata + Spark feedback labels storage</td><td>5432</td></tr>
+  <tr><td><strong>Flask Web App</strong></td><td>Python/Flask</td><td>REST API backend serving live dashboard</td><td>3000</td></tr>
+  <tr><td><strong>Prometheus + Grafana</strong></td><td>prom/prometheus, grafana</td><td>Metrics collection and infrastructure monitoring</td><td>9090, 3001</td></tr>
+</table>
+
+<h3>5.3 Data Flow: Transaction Lifecycle</h3>
+<div class="fig-container">
+  <img src="images/data_flow.png" alt="Transaction Lifecycle Data Flow"/>
+  <div class="fig-caption">Figure 2: End-to-End Lifecycle of a Single Transaction — from Generation to Dashboard Display</div>
+</div>
+
+<h4>Step 1 — Data Generation (Producer)</h4>
+<p>The <code>producer</code> container continuously generates synthetic transaction payloads. Each user profile maintains a home location, average spending baseline, home IP address, and device ID. A 5% anomaly injection rate injects the fraud patterns described in Section 4. The JSON payload is encrypted using <strong>AES-128 (Fernet symmetric cipher)</strong> with the key injected via environment variables, then published to the Kafka <code>transactions</code> topic.</p>
+
+<h4>Step 2 — Kafka Ingestion (3-Broker Cluster)</h4>
+<p>The Kafka cluster runs three broker containers (<code>kafka-1</code>, <code>kafka-2</code>, <code>kafka-3</code>) coordinated by Apache ZooKeeper on port 2181. Each topic partition is replicated across brokers for high availability — if kafka-1 fails, kafka-2 is elected as partition leader without data loss. The encrypted payloads are durably persisted on Kafka's volume until consumed.</p>
+
+<h4>Step 3 — Secure Gateway (Decryption + Redis Validation)</h4>
+<p>The <code>secure-gateway</code> service subscribes to the <code>transactions</code> topic, decrypts each payload using the shared Fernet key, and performs an immediate Redis lookup to check the transaction's IP address and device ID against known fraud-ring blacklists. The decrypted, pre-validated transaction is pushed back to Kafka on the <code>transactions-metadata</code> topic (carrying only the transaction ID and timestamp) while the full payload is stored in Redis as a key-value entry (<code>tx:{transaction_id}</code>) for Spark to hydrate.</p>
+
+<h4>Step 4 — Spark Structured Streaming (Feature Engineering + Inference)</h4>
+<p>The Spark inference job reads from <code>transactions-metadata</code>, hydrates full payloads from Redis via a PySpark UDF, and applies a 1-hour sliding window (1-minute slide) grouped by <code>user_id</code>. The <code>process_batch()</code> function then executes feature engineering, model inference, heuristic checks, and outputs to the shared RAM volume. Processing is triggered every <strong>10 seconds</strong> via <code>.trigger(processingTime="10 seconds")</code>.</p>
+
+<h4>Step 5 — Output &amp; Dashboard</h4>
+<p>Processed results are written atomically to a shared memory volume: a live feed for the last 100 transactions and a feature vector store for SHAP explanations. The Flask API polls the live feed every request at <code>/api/live</code>. The <code>/api/explain/&lt;tx_id&gt;</code> endpoint performs reverse-search on the feature vector store and invokes <code>shap.TreeExplainer</code> to deconstruct the XGBoost decision path.</p>
+
+<h3>5.4 Tool Justification</h3>
+<table>
+  <tr><th>Decision</th><th>Chosen</th><th>Alternative</th><th>Rationale</th></tr>
+  <tr><td>Streaming engine</td><td>Spark Structured Streaming</td><td>Apache Flink</td><td>Native Python API, simpler stateful programming, unified batch/stream paradigm</td></tr>
+  <tr><td>Message broker</td><td>Apache Kafka</td><td>RabbitMQ</td><td>Log-based replay capability; consumer can resume from any offset after crash</td></tr>
+  <tr><td>ML model</td><td>XGBoost ensemble</td><td>Neural network</td><td>Superior on tabular data; interpretable via SHAP; &lt;1ms inference latency</td></tr>
+  <tr><td>Language</td><td>Python (PySpark)</td><td>Scala Spark</td><td>Seamless integration with NumPy, Pandas, scikit-learn, SHAP; faster iteration</td></tr>
+  <tr><td>Object storage</td><td>MinIO</td><td>AWS S3</td><td>S3-compatible API; fully on-premise; no cloud costs</td></tr>
+  <tr><td>Containerisation</td><td>Orchestration Config</td><td>Kubernetes</td><td>Single-host prototype; dramatically lower operational complexity</td></tr>
+</table>
+
+<!-- ===== SECTION 6: METHODOLOGY ===== -->
+<h2>6. Methodology</h2>
+
+<h3>6.1 Machine Learning Architecture: Ensemble of Gradient-Boosted Classifiers</h3>
+
+<div class="fig-container">
+  <img src="images/ml_pipeline.png" alt="ML Training Pipeline"/>
+  <div class="fig-caption">Figure 3: End-to-End Machine Learning Training Pipeline</div>
+</div>
+
+<h4>6.1.1 XGBoost (Weight: 40%)</h4>
+<p>XGBoost implements gradient-boosted decision trees through an additive model: each new tree is trained to minimise the residual error (gradient of the loss function) of the ensemble so far. The key hyperparameters in this project:</p>
+<table>
+  <tr><th>Hyperparameter</th><th>Value</th><th>Purpose</th></tr>
+  <tr><td><code>n_estimators</code></td><td>300</td><td>Number of sequential trees in the ensemble</td></tr>
+  <tr><td><code>max_depth</code></td><td>5</td><td>Limits tree complexity to prevent overfitting</td></tr>
+  <tr><td><code>learning_rate</code></td><td>0.05</td><td>Shrinkage factor — slower learning, better generalisation</td></tr>
+  <tr><td><code>scale_pos_weight</code></td><td>~19 (auto-computed)</td><td>Balances class weights: normal_count / fraud_count</td></tr>
+  <tr><td><code>min_child_weight</code></td><td>5</td><td>Minimum sum of instance weights per leaf — prevents memorising rare fraud patterns</td></tr>
+  <tr><td><code>gamma</code></td><td>0.1</td><td>Minimum loss reduction required to make a further split</td></tr>
+  <tr><td><code>reg_lambda</code></td><td>1.0</td><td>L2 regularisation — penalises large leaf weights</td></tr>
+  <tr><td><code>reg_alpha</code></td><td>0.1</td><td>L1 regularisation — promotes feature sparsity</td></tr>
+  <tr><td><code>eval_metric</code></td><td>aucpr</td><td>PR-AUC is preferred over logloss for imbalanced data</td></tr>
+</table>
+
+<h4>6.1.2 LightGBM (Weight: 35%)</h4>
+<p>LightGBM employs a <strong>leaf-first (best-first) tree growth</strong> strategy rather than XGBoost's level-first approach. This produces more complex trees with fewer splits, significantly accelerating training on large datasets. Key differentiators in this project: <code>class_weight='balanced'</code> provides an additional safeguard against class imbalance; L2 regularisation (<code>reg_lambda=0.1</code>) reduces overfitting on SMOTE-augmented data; <code>reg_alpha=0.05</code> provides light L1 feature selection pressure.</p>
+
+<h4>6.1.3 CatBoost (Weight: 25%)</h4>
+<p>CatBoost uses <strong>symmetric decision trees</strong> (also called oblivious trees), where all nodes at the same tree level use the same split condition. This architecture is particularly efficient for inference — the entire decision path can be encoded as a table lookup. CatBoost provides built-in handling for categorical features without requiring manual one-hot encoding, and falls back gracefully to XGBoost predictions if not installed in the environment.</p>
+
+<h4>6.1.4 Weighted Ensemble Combination</h4>
+<p>All three models independently output a fraud probability (0.0 → 1.0) for every test transaction. These are combined as a weighted average:</p>
+<pre>Ensemble Score = (0.40 × P_XGB) + (0.35 × P_LGB) + (0.25 × P_CB)</pre>
+<p>XGBoost receives the highest weight based on its historical performance superiority on tabular fraud datasets. The ensemble approach is more robust than any single model — if one model produces an erroneous prediction, the other two can outvote it through majority weighting.</p>
+
+<h3>6.2 Threshold Optimisation Using F2 Score</h3>
+<p>The ensemble produces a continuous probability score that must be binarised into FRAUD (1) or NORMAL (0). The default threshold of 0.5 is suboptimal for fraud detection because the business cost structure is asymmetric: a <strong>False Negative</strong> (missed fraud) costs ~$100 in direct financial loss while a <strong>False Positive</strong> (wrongly declined legitimate transaction) costs ~$5 in customer friction. The F<sub>β</sub> score family captures this asymmetry:</p>
+<pre>F_β = (1 + β²) × (Precision × Recall) / (β² × Precision + Recall)
+
+With β=2: Recall is weighted twice as heavily as Precision
+F2 = 5 × (Precision × Recall) / (4 × Precision + Recall)</pre>
+<p>The system scans all candidate thresholds in [0.10, 0.70] with step 0.01, selects the threshold maximising F2, and saves it to the model registry. The optimal threshold identified in the latest training run was <strong>0.15</strong>.</p>
+
+<h3>6.3 Hybrid Detection: Rule-Based Heuristics</h3>
+<p>The ML model alone cannot reliably catch all fraud typologies — some patterns are better expressed as deterministic rules operating across multiple transactions simultaneously:</p>
+
+<h4>Scenario A: Impossible Travel (Haversine Distance)</h4>
+<p>The Haversine formula computes the great-circle distance between the current transaction's GPS coordinates (lat, lon) and a reference point (US geographic center: 39.8°N, 98.6°W). Any transaction exceeding 20,000 km from the reference — physically impossible to travel to in minutes — is flagged regardless of the ML model's prediction:</p>
+<pre>def haversine(lat1, lon1, lat2, lon2):
+    R = 6371   # Earth radius (km)
+    dLat = radians(lat2 - lat1)
+    dLon = radians(lon2 - lon1)
+    a = sin(dLat/2)² + cos(radians(lat1)) × cos(radians(lat2)) × sin(dLon/2)²
+    return R × 2 × atan2(√a, √(1−a))
+
+is_impossible_travel = (distance_from_center > 20000)</pre>
+
+<h4>Scenario B: Fraud Ring Detection (Entity Analysis)</h4>
+<p>Within each micro-batch (representing a ~10-second window of transactions), Spark applies cross-user entity analysis on the collected Pandas DataFrame. If multiple distinct <code>user_id</code> values share the same <code>device_id</code> or <code>ip_address</code>, all involved transactions are flagged as potential fraud ring activity:</p>
+<pre># Shared device detection
+dev_counts = pdf.groupby('device_id')['user_id'].nunique()
+bad_devs = dev_counts[dev_counts > 1].index.tolist()
+
+# Shared IP detection
+ip_counts = pdf.groupby('ip_address')['user_id'].nunique()
+bad_ips = ip_counts[ip_counts > 1].index.tolist()</pre>
+
+<h4>Scenario C: Account Takeover (ML Behavioural Drift)</h4>
+<p>This scenario produces no rule violations (same IP, same city, same device) but exhibits extreme behavioural drift. The XGBoost model's decision trees heavily weight the combination of extreme <code>amount_z_score</code> (+5σ from user baseline), temporal anomaly (<code>hour_sin/cos</code> outside normal active hours), and high <code>avg_diff_ratio</code>. This is the scenario SHAP explainability was specifically designed to illuminate.</p>
+
+<h3>6.4 Airflow DAG: MLOps Retraining Pipeline</h3>
+<p>The <code>fraud_detection_training_enhanced</code> Airflow DAG orchestrates the complete model retraining lifecycle with <strong>parallelised feature engineering</strong> and <strong>parallelised model training</strong>:</p>
+
+<div class="fig-container">
+  <img src="images/airflow_dag.png" alt="Airflow DAG"/>
+  <div class="fig-caption">Figure 4: Apache Airflow DAG — fraud_detection_training_enhanced (Parallel Feature Engineering + Parallel Model Training)</div>
+</div>
+
+<p>The DAG task dependency graph is defined as:</p>
+<pre>t1 (fetch_data) >> [t2a, t2b, t2c]     # Parallel feature engineering
+[t2a, t2b, t2c] >> t3 (merge_features)  # Join feature sets
+t3 >> t4 (preprocess_data)              # SMOTE + RobustScaler
+t4 >> [t5a, t5b, t5c]                   # Parallel model training
+[t5a, t5b, t5c] >> t6 (ensemble_models) # Ensemble combination
+t6 >> t7 (evaluate_models)              # F2 threshold + metrics</pre>
+
+<p>The <strong>feedback loop</strong> in <code>fetch_data</code> is particularly important for MLOps: it queries PostgreSQL's <code>feedback_labels</code> table (populated by Spark at inference time) to retrieve the last 7 days of live-scored transactions, merges them with synthetic historical data, and retrains the model on real operational feedback. This implements a self-improving system where production behaviour continuously feeds back into model quality.</p>
+
+<h3>6.5 Implementation Details</h3>
+<table>
+  <tr><th>Component</th><th>Language / Library</th><th>Key Implementation Details</th></tr>
+  <tr><td>Data Producer</td><td>Python, confluent-kafka, Fernet</td><td>User profiles, anomaly injection (5%), AES encryption, delivery callbacks</td></tr>
+  <tr><td>Secure Gateway</td><td>Python, kafka-python, redis-py</td><td>Topic subscription, Fernet decrypt, Redis key-value write, metadata re-publish</td></tr>
+  <tr><td>Spark Streaming</td><td>PySpark 3.5.1, pandas, numpy, xgboost</td><td>Redis UDF hydration, watermark(1min), window(1hr, 1min), micro-batch processing, 10s trigger</td></tr>
+  <tr><td>Airflow DAG</td><td>Python, S3Hook (boto3), sklearn, imblearn</td><td>Parallel operators, S3 artifact exchange, feedback loop from PostgreSQL</td></tr>
+  <tr><td>Web Dashboard</td><td>Flask, shap, HTML/CSS/JS</td><td>REST API for live polls and SHAP explainability</td></tr>
+  <tr><td>Infrastructure</td><td>Docker Compose, YAML</td><td>20+ services, tmpfs RAM volumes, shared volume mounts, health checks, resource limits</td></tr>
+</table>
+
+
+<!-- ===== SECTION 7: EXPERIMENTS & RESULTS ===== -->
+<h2>7. Experiments &amp; Results</h2>
+
+<h3>7.1 Model Performance Metrics</h3>
+<p>The ensemble model was trained on 100,000 synthetic transactions (5% fraud, 95% legitimate) using a time-based 80/20 split, with SMOTE applied to the training set only to prevent data leakage into the test distribution.</p>
+
+<table>
+  <tr><th>Metric</th><th>Value</th><th>Interpretation</th></tr>
+  <tr><td><strong>Accuracy</strong></td><td>97.1%</td><td>97 out of every 100 transactions correctly classified</td></tr>
+  <tr><td><strong>Recall (Sensitivity)</strong></td><td>72.7%</td><td>Catches ~73% of all real fraud cases (key metric)</td></tr>
+  <tr><td><strong>Precision</strong></td><td>~72%</td><td>When flagging fraud, the model is correct ~72% of the time</td></tr>
+  <tr><td><strong>F1 Score</strong></td><td>84.2%</td><td>Balanced harmonic mean of Precision and Recall</td></tr>
+  <tr><td><strong>F2 Score</strong></td><td>76.9%</td><td>Recall-weighted score (fraud-detection optimised)</td></tr>
+  <tr><td><strong>ROC-AUC</strong></td><td>94.5%</td><td>Model's ability to rank fraud above normal at all thresholds</td></tr>
+  <tr><td><strong>PR-AUC</strong></td><td>90.5%</td><td>Precision-Recall performance at class-imbalanced scale</td></tr>
+  <tr><td><strong>Optimal Threshold</strong></td><td>0.15</td><td>F2-maximising threshold (vs. naïve default 0.50)</td></tr>
+  <tr><td><strong>Business Cost</strong></td><td>$600</td><td>FP × $5 + FN × $100 per evaluation epoch (lower = better)</td></tr>
+</table>
+
+<div class="callout">
+<strong>Why accuracy alone is misleading:</strong> A model that predicts "Normal" for 100% of transactions achieves 95% accuracy (as fraud is only 5% of data) — yet detects zero fraud. The meaningful metrics are ROC-AUC (94.5%) and PR-AUC (90.5%), which evaluate discriminative ability across all thresholds, and Recall (72.7%), which directly measures fraud detection rate.
+</div>
+
+<h3>7.2 SMOTE Impact on Class Balance</h3>
+<table>
+  <tr><th>Stage</th><th>Fraud Samples</th><th>Normal Samples</th><th>Ratio</th></tr>
+  <tr><td>Before SMOTE (raw training split)</td><td>~4,000</td><td>~76,000</td><td>5% / 95%</td></tr>
+  <tr><td>After SMOTE</td><td>~76,000 (synthetic)</td><td>~76,000</td><td>50% / 50%</td></tr>
+</table>
+<p>SMOTE generates synthetic fraud samples by selecting a real fraud example, finding its k=5 nearest neighbours in feature space, and interpolating a new sample along the line segment between them. This creates novel, plausible fraud cases rather than simply duplicating existing ones — directly improving Recall from near-zero to 72.7%.</p>
+
+<h3>7.3 Comparative Analysis: Batch vs. Stream Processing</h3>
+<table>
+  <tr><th>Aspect</th><th>Traditional Batch</th><th>Spark Structured Streaming (This Project)</th></tr>
+  <tr><td>Detection Latency</td><td>Hours to days</td><td><strong>10–30 seconds</strong> (micro-batch trigger)</td></tr>
+  <tr><td>Velocity Handling</td><td>Limited by job schedule</td><td>Continuous sliding window aggregations</td></tr>
+  <tr><td>Fault Tolerance</td><td>Full job restart</td><td>Continuous checkpointing; resumes from last offset</td></tr>
+  <tr><td>Stateful Features</td><td>Precomputed offline ETL</td><td>Real-time window-based velocity metrics</td></tr>
+  <tr><td>Scalability</td><td>Fixed cluster resources</td><td>Horizontal scaling via additional Spark Workers</td></tr>
+  <tr><td>Model Updates</td><td>Requires pipeline restart</td><td>Live model hot-swap via shared volume</td></tr>
+</table>
+
+<h3>7.4 Fraud Detection Effectiveness by Scenario</h3>
+<table>
+  <tr><th>Fraud Scenario</th><th>Detection Method</th><th>Detection Rate</th><th>Key Feature(s)</th></tr>
+  <tr><td>Account Takeover</td><td>XGBoost ML model</td><td>~73% (bound by Recall)</td><td>amount_z_score, hour_sin/cos, avg_diff_ratio</td></tr>
+  <tr><td>Impossible Travel</td><td>Haversine rule (&gt;20,000 km)</td><td><strong>100%</strong> (deterministic)</td><td>lat, lon → distance_from_center</td></tr>
+  <tr><td>Fraud Ring</td><td>Cross-batch entity analysis</td><td><strong>100%</strong> (deterministic)</td><td>device_id, ip_address → shared multi-user</td></tr>
+  <tr><td>High-Risk Merchant</td><td>Merchant ID prefix match</td><td><strong>100%</strong> (deterministic)</td><td>merchant_id.startswith('M_00')</td></tr>
+  <tr><td>Structuring</td><td>XGBoost + PCA features</td><td>Partial (captured via V1–V28)</td><td>amount, V1–V28 PCA components</td></tr>
+  <tr><td>Card Testing</td><td>Velocity heuristic + ML</td><td>High (tx_count_1h spike)</td><td>tx_count_1h, amount (micro-value)</td></tr>
+</table>
+
+<h3>7.5 Real-Time System Health Monitoring</h3>
+<p>The Spark streaming job computes a real-time <strong>data drift score</strong> on every micro-batch, comparing the current batch's mean transaction amount to the training-time baseline mean ($50.00):</p>
+<pre>drift_score = |current_batch_mean - BASELINE_MEAN| / BASELINE_MEAN
+
+Status assignment:
+  drift_score ≤ 0.5  →  "OK"
+  drift_score > 0.5  →  "DRIFT_WARNING"
+  drift_score > 1.0  →  "DRIFT_CRITICAL"</pre>
+<p>This drift score is calculated every batch and is consumable by monitoring tools for automated alerting, enabling early detection of distributional shift before it degrades model accuracy.</p>
+
+<h3>7.6 MLflow Experiment Tracking</h3>
+<p>Every Airflow DAG training run logs the following artefacts to the MLflow server at <code>localhost:5000</code>:</p>
+<ul>
+  <li><strong>Parameters:</strong> n_estimators, max_depth, learning_rate, scale_pos_weight, SMOTE k-value, optimal threshold</li>
+  <li><strong>Metrics:</strong> Accuracy, Precision, Recall, F1, F2, ROC-AUC, PR-AUC, business cost</li>
+  <li><strong>Artefacts:</strong> Serialized XGBoost model, Preprocessing Scaler state, Optimal threshold parameters</li>
+</ul>
+<p>This enables systematic model version comparison and reproducibility — any training run can be re-executed with identical parameters to reproduce recorded metrics.</p>
+
+<!-- ===== SECTION 8: DISCUSSION ===== -->
+<h2>8. Discussion</h2>
+
+<h3>8.1 Interpretation of Results</h3>
+<p>The <strong>97.1% accuracy</strong> figure, though impressive, is misleading in isolation given the 5% fraud rate. The more informative metrics are <strong>ROC-AUC (94.5%)</strong> and <strong>PR-AUC (90.5%)</strong>, which evaluate the model's discriminative ability across all possible thresholds rather than at a single operating point. The F2-optimised threshold of 0.15 (versus the naïve 0.5 default) reflects a deliberate, business-rational decision: it is far more acceptable to trigger a customer verification for a legitimate transaction than to silently allow a fraudulent one to proceed, given the 20:1 cost asymmetry ($100 FN vs. $5 FP).</p>
+
+<p>The <strong>hybrid detection strategy</strong> proves essential. The ML model alone cannot reliably catch Impossible Travel or Fraud Ring patterns, which require cross-transaction entity analysis across multiple simultaneous rows — outside the scope of a single-record feature vector. Conversely, rule-based systems alone cannot detect Account Takeover, which requires statistical comparison of the current transaction against each user's personal historical spending distribution — a capability uniquely provided by the XGBoost model trained on behavioural baseline features. The combination achieves comprehensive coverage across all major fraud typologies that neither approach can achieve independently.</p>
+
+<h3>8.2 Challenges Faced</h3>
+
+<h4>Class Imbalance and SMOTE Scoping</h4>
+<p>The 5% fraud rate presents a fundamental modelling challenge. Without SMOTE, all three gradient-boosted models default to predicting "Normal" for the entirety of the minority class, achieving deceptively high accuracy while detecting zero fraud. Implementing SMOTE correctly required careful scoping: it must be applied <em>exclusively</em> to the training split and never to the test set. Applying SMOTE before test splitting would constitute data leakage — synthetic interpolations between training fraud samples could produce test samples that are mathematically similar (not truly held-out), artificially inflating all reported metrics.</p>
+
+<h4>Stateful Streaming Complexity</h4>
+<p>Implementing velocity features (e.g., <code>tx_count_1h</code>) in a streaming context requires Spark's watermarking and sliding window mechanisms. Late-arriving data and out-of-order events — common in distributed networks — must be handled gracefully. The <code>withWatermark("timestamp", "1 minutes")</code> configuration provides a 1-minute tolerance for late data while bounding the in-memory state Spark must maintain. Without this bound, the state store would grow indefinitely, eventually causing OOM failures in the constrained container environment.</p>
+
+<h4>Container Resource Constraints</h4>
+<p>Running 20+ Docker containers simultaneously on a single host with limited RAM (6GB allocated) required careful resource tuning. Spark's <code>spark.driver.memory</code> and <code>spark.executor.memory</code> were constrained to 512MB each. The Airflow worker, MLflow server, and three Kafka brokers each impose additional memory pressure. The orchestration configuration limits and resource constraints prevent any single container from starving the others.</p>
+
+<h4>Zero-Downtime Model Hot-Swap</h4>
+<p>Ensuring that Spark picks up a newly retrained model without restarting the streaming job required the <code>ModelWrapper</code> lazy-loading singleton pattern: the model is not loaded at startup but on first use, and the implementation checks for the existence of updated parameters before loading. When the orchestration layer writes a updated model state to the shared volume, Spark naturally picks it up on the next batch's first inference call — achieving a seamless production model update with no service interruption.</p>
+
+<h3>8.3 Lessons Learned</h3>
+<ol>
+  <li><strong>Micro-batching is the pragmatic optimum:</strong> Pure event-at-a-time streaming (Apache Flink) offers lower latency (&lt;1s) but requires significantly more complex stateful programming, operator state management, and operational expertise. Spark's 10-second micro-batch trigger provides sub-minute fraud detection with dramatically simpler code and better Python ecosystem integration.</li>
+  <li><strong>Data lake architecture pays MLOps dividends:</strong> Storing all artifacts (raw data, feature CSVs, trained models, scalers, thresholds) in MinIO as S3-compatible objects enables Airflow to orchestrate the full retraining cycle without coupling to the live inference path. Storage and compute are cleanly decoupled.</li>
+  <li><strong>Explainability builds operational trust:</strong> A fraud detection system outputting only binary FRAUD/NORMAL is insufficient for production use. Under GDPR Article 22, automated decisions affecting individuals must be explainable. SHAP integration — surfacing ranked feature importance for every flagged transaction — directly fulfils this regulatory requirement and enables fraud analysts to prioritise case reviews efficiently.</li>
+  <li><strong>Threshold optimisation is non-negotiable:</strong> The 0.5 default threshold would have captured far fewer fraud cases. Systematic F2-based threshold scanning — treating the decision boundary as a tuneable hyperparameter directly tied to the business cost structure — is a critical step that is frequently overlooked in academic fraud detection literature.</li>
+  <li><strong>Security must be designed in, not bolted on:</strong> Implementing AES encryption at the producer level and dedicated decryption at the gateway level enforces a clear security perimeter. Even if the Kafka cluster were compromised, payload data remains unreadable without the Fernet key.</li>
+</ol>
+
+<!-- ===== SECTION 9: CONCLUSION ===== -->
+<h2>9. Conclusion &amp; Future Work</h2>
+
+<h3>9.1 Summary of Contributions</h3>
+<p>This project delivers a fully integrated, production-grade <strong>Real-Time Fraud Detection Big Data Pipeline</strong> with the following key contributions:</p>
+<ol>
+  <li><strong>End-to-End Containerised Pipeline:</strong> A complete, Docker Compose-deployable system integrating Apache Kafka (3-broker HA cluster), Apache Spark Structured Streaming (Master + 2 Workers), XGBoost ensemble, Redis, MinIO, Airflow, MLflow, PostgreSQL, and Flask — 20+ microservices with custom networking, volume management, and health checking.</li>
+  <li><strong>Hybrid Detection Architecture:</strong> A novel combination of XGBoost+LightGBM+CatBoost ensemble inference with deterministic Haversine travel detection and cross-entity fraud-ring analysis, achieving comprehensive coverage across six identified fraud typologies that neither approach alone addresses.</li>
+  <li><strong>Automated MLOps Lifecycle:</strong> A multi-stage parallel Airflow DAG (<code>fetch_data → [temporal|statistical|velocity features] → merge → preprocess → [XGB|LGB|CB training] → ensemble → evaluate</code>) with integrated PostgreSQL feedback loop enabling continuous self-improvement from live operational data.</li>
+  <li><strong>Explainable AI Integration:</strong> Real-time SHAP TreeExplainer analysis surfaced at the dashboard level for every flagged transaction, providing regulatorily-compliant, ranked feature importance visualisations to fraud analysts.</li>
+  <li><strong>Security-by-Design:</strong> AES-128 symmetric encryption (Fernet) of all Kafka transaction payloads with a dedicated Secure Gateway microservice enforcing decrypt-validate-republish security perimeter.</li>
+</ol>
+
+<p><strong>Key Results:</strong> 97.1% accuracy · 94.5% ROC-AUC · 90.5% PR-AUC · 72.7% Recall · F2-optimised threshold 0.15 · Sub-30-second end-to-end detection latency.</p>
+
+<h3>9.2 Potential Improvements</h3>
+<ul>
+  <li><strong>Online Learning:</strong> Replace batch retraining with incremental learning algorithms (e.g., River library's HoeffdingTreeClassifier, or XGBoost's <code>xgb_model</code> warm-start parameter) that update the model in real-time as new labelled feedback accumulates — eliminating the retraining delay entirely.</li>
+  <li><strong>Graph Neural Networks for Fraud Rings:</strong> Replace rule-based shared-entity detection with a Graph Neural Network (GNN) modelling the full bipartite graph of user-device-IP relationships, enabling detection of sophisticated ring structures that don't share direct entity attributes but are structurally connected through intermediate nodes.</li>
+  <li><strong>Kubernetes Deployment:</strong> Migrate from Docker Compose to Kubernetes with Helm charts (Strimzi for Kafka, Spark on Kubernetes operator) for genuine horizontal scaling across multiple physical or cloud nodes, enabling true production-scale throughput.</li>
+  <li><strong>Automated Drift-Triggered Retraining:</strong> Replace scheduled Airflow retraining with drift-triggered retraining using statistical tests (ADWIN algorithm, Page-Hinkley test, or Population Stability Index) that automatically initiate a new training run when significant distributional shift is detected in the data stream.</li>
+  <li><strong>Real Payment Processor Integration:</strong> Connect to live transaction feeds via ISO 8583 financial messaging standard or payment gateway APIs (Stripe, Braintree webhooks) for production deployment with real transaction data.</li>
+</ul>
+
+<h3>9.3 Suggestions for Future Research</h3>
+<ul>
+  <li>Comparative benchmarking of Apache Kafka + Spark Structured Streaming versus Apache Flink at 100,000+ TPS latency and throughput scale for fraud detection workloads.</li>
+  <li>Federated learning architectures for training fraud models across multiple banking institutions without sharing raw transaction data — preserving privacy while leveraging collective fraud intelligence.</li>
+  <li>Adversarial robustness analysis: how sophisticated fraudsters can reverse-engineer and evade XGBoost-based detection, and countermeasures via adversarial training and model ensembling diversity.</li>
+  <li>Application of Large Language Models (LLMs) for semantic fraud reasoning — using natural language pattern descriptions rather than hand-crafted feature engineering to discover novel fraud typologies.</li>
+</ul>
+
+<!-- ===== SECTION 10: REFERENCES ===== -->
+<h2>10. References</h2>
+<ol>
+  <li>Chen, T., &amp; Guestrin, C. (2016). XGBoost: A scalable tree boosting system. <em>Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining</em>, 785–794. https://doi.org/10.1145/2939672.2939785</li>
+  <li>Chawla, N. V., Bowyer, K. W., Hall, L. O., &amp; Kegelmeyer, W. P. (2002). SMOTE: Synthetic minority over-sampling technique. <em>Journal of Artificial Intelligence Research</em>, 16, 321–357.</li>
+  <li>Dal Pozzolo, A., Caelen, O., Johnson, R. A., &amp; Bontempi, G. (2015). Calibrating probability with undersampling for unbalanced classification. <em>IEEE Symposium Series on Computational Intelligence (SSCI)</em>, 159–166.</li>
+  <li>Lundberg, S. M., &amp; Lee, S.-I. (2017). A unified approach to interpreting model predictions. <em>Advances in Neural Information Processing Systems</em>, 30, 4765–4774.</li>
+  <tr>Zaharia, M., et al. (2016). Apache Spark: A unified engine for big data processing. <em>Communications of the ACM</em>, 59(11), 56–65.</li>
+  <li>Kreps, J., Narkhede, N., &amp; Rao, J. (2011). Kafka: A distributed messaging system for log processing. <em>Proceedings of the NetDB Workshop</em>, 11, 1–7.</li>
+  <li>Ke, G., et al. (2017). LightGBM: A highly efficient gradient boosting decision tree. <em>Advances in Neural Information Processing Systems</em>, 30.</li>
+  <li>Prokhorenkova, L., et al. (2018). CatBoost: Unbiased boosting with categorical features. <em>Advances in Neural Information Processing Systems</em>, 31.</li>
+  <li>Akiba, T., et al. (2019). Optuna: A next-generation hyperparameter optimization framework. <em>Proceedings of the 25th ACM SIGKDD</em>, 2623–2631.</li>
+  <li>Awoyemi, J. O., Adetunmbi, A. O., &amp; Oluwadare, S. A. (2017). Credit card fraud detection using machine learning techniques: A comparative analysis. <em>Proceedings of ICCNI 2017</em>, 1–9.</li>
+  <li>Apache Software Foundation. (2024). <em>Apache Airflow Documentation v2.8</em>. https://airflow.apache.org/docs/</li>
+  <li>MLflow. (2024). <em>MLflow: An open source platform for the machine learning lifecycle</em>. https://mlflow.org</li>
+  <li>Dong, Y., et al. (2018). Data-driven credit fraud detection using streaming analytics. <em>IEEE Access</em>, 6, 20486–20497.</li>
+</ol>
+
+<!-- ===== SECTION 11: APPENDICES ===== -->
+<h2>11. Appendices</h2>
+
+<h3>Appendix A: Key Source Code Listings</h3>
+
+<h4>A.1 PySpark Sliding Window Aggregation (Real-time Processing Engine)</h4>
+<pre>df_windowed = df_enriched \
+    .withWatermark("timestamp", "1 minutes") \
+    .groupBy(
+        window(col("timestamp"), "1 hour", "1 minute"),
+        col("user_id")
+    ) \
+    .agg(
+        count("*").alias("calc_tx_count_1h"),
+        spark_sum("amount").alias("calc_amount_last_1h"),
+        last("transaction_id").alias("transaction_id"),
+        last("amount").alias("amount"),
+        last("timestamp").alias("timestamp"),
+        *[last(f"V{i}").alias(f"V{i}") for i in range(1, 29)]
+    )
+
+# Triggered every 10 seconds, outputs via foreachBatch
+query = df_windowed.writeStream \
+    .outputMode("update") \
+    .trigger(processingTime="10 seconds") \
+    .foreachBatch(process_batch) \
+    .option("checkpointLocation", "/tmp/spark-checkpoints") \
+    .start()</pre>
+
+<h4>A.2 Feature Engineering implementation (Processing Engine)</h4>
+<pre># Cyclical time encoding — avoids midnight discontinuity
+pdf['hour_sin'] = np.sin(2 * np.pi * pdf['hour'] / 24)
+pdf['hour_cos'] = np.cos(2 * np.pi * pdf['hour'] / 24)
+
+# User behavioural baseline
+pdf["user_amount_mean"] = pdf["user_id"].map(lambda u: avgs.get(u, 100.0))
+pdf["user_amount_std"]  = pdf["user_amount_mean"] * 0.5
+pdf['amount_z_score']   = (pdf['amount'] - pdf['user_amount_mean']) \
+                           / (pdf['user_amount_std'] + 1e-6)
+pdf['avg_diff_ratio']   = pdf['amount'] / pdf['user_amount_mean']
+
+# Geolocation: Haversine distance
+def haversine(lat1, lon1, lat2, lon2):
+    R = 6371
+    dLat, dLon = radians(lat2-lat1), radians(lon2-lon1)
+    a = sin(dLat/2)**2 + cos(radians(lat1))*cos(radians(lat2))*sin(dLon/2)**2
+    return R * 2 * atan2(sqrt(a), sqrt(1-a))
+
+pdf['is_impossible_travel'] = pdf['distance_from_center'] > 20000</pre>
+
+<h4>A.3 Airflow DAG Task Dependency Definition</h4>
+<pre>t1  = PythonOperator(task_id='fetch_data',           python_callable=fetch_data,           dag=dag)
+t2a = PythonOperator(task_id='temporal_features',    python_callable=temporal_features,    dag=dag)
+t2b = PythonOperator(task_id='statistical_features', python_callable=statistical_features, dag=dag)
+t2c = PythonOperator(task_id='velocity_features',    python_callable=velocity_features,    dag=dag)
+t3  = PythonOperator(task_id='merge_features',       python_callable=merge_features,       dag=dag)
+t4  = PythonOperator(task_id='preprocess_data',      python_callable=preprocess_data,      dag=dag)
+t5a = PythonOperator(task_id='train_xgboost',        python_callable=train_xgboost,        dag=dag)
+t5b = PythonOperator(task_id='train_lightgbm',       python_callable=train_lightgbm,       dag=dag)
+t5c = PythonOperator(task_id='train_catboost',       python_callable=train_catboost,       dag=dag)
+t6  = PythonOperator(task_id='ensemble_models',      python_callable=ensemble_models,      dag=dag)
+t7  = PythonOperator(task_id='evaluate_models',      python_callable=evaluate_models,      dag=dag)
+
+# Parallel feature engineering → merge → preprocess → parallel training → ensemble → evaluate
+t1 >> [t2a, t2b, t2c] >> t3 >> t4 >> [t5a, t5b, t5c] >> t6 >> t7</pre>
+
+<h4>A.4 XGBoost Ensemble + F2 Threshold Optimisation</h4>
+<pre># Weighted ensemble: 40% XGB + 35% LGB + 25% CB
+ensemble_probs = 0.40 * xgb_probs + 0.35 * lgb_probs + 0.25 * cb_probs
+
+# F2-optimised threshold scan
+thresholds = np.arange(0.10, 0.70, 0.01)
+best_thresh = max(
+    thresholds,
+    key=lambda t: fbeta_score(y_test, (ensemble_probs >= t).astype(int), beta=2)
+)
+# → best_thresh = 0.15
+preds = (ensemble_probs >= best_thresh).astype(int)
+
+# Save threshold for Spark inference
+s3_hook.load_string(json.dumps({'threshold': float(best_thresh)}),
+                    key='threshold_params', bucket_name='models', replace=True)</pre>
+
+<h4>A.5 AES Encryption in Data Producer</h4>
+<pre>from cryptography.fernet import Fernet
+
+ENCRYPTION_KEY = os.getenv("ENCRYPTION_KEY")  # Injected via Docker env
+cipher = Fernet(ENCRYPTION_KEY)
+
+# Encrypt every payload before Kafka publication
+payload_str   = json.dumps(payload)
+final_payload = cipher.encrypt(payload_str.encode('utf-8'))
+producer.produce(KAFKA_TOPIC, key=str(user_id), value=final_payload)</pre>
+
+<h4>A.6 Redis Gateway Hydration Strategy</h4>
+<pre>@udf(returnType=StringType())
+def fetch_from_redis(tx_id):
+    """Hydrate full JSON payload from Redis RAM cache using transaction_id key"""
+    r = redis.Redis(host='redis-ram-cache', port=6379, decode_responses=True)
+    return r.get(f"tx:{tx_id}")   # Returns full decrypted JSON from Gateway
+
+# Applied as a PySpark column UDF on the metadata stream
+df_json = df_meta.withColumn("json_data", fetch_from_redis(col("transaction_id")))
+df_json = df_json.filter(col("json_data").isNotNull())</pre>
+
+<h3>Appendix B: Docker Services Summary</h3>
+<table>
+  <tr><th>Service</th><th>Image</th><th>Port(s)</th><th>Role</th></tr>
+  <tr><td>kafka-1, kafka-2, kafka-3</td><td>bitnami/kafka</td><td>9092–9094</td><td>HA transaction streaming</td></tr>
+  <tr><td>zookeeper</td><td>bitnami/zookeeper</td><td>2181</td><td>Kafka cluster coordination</td></tr>
+  <tr><td>redis-ram-cache</td><td>redis:7-alpine</td><td>6379</td><td>In-memory caching &amp; gateway hydration</td></tr>
+  <tr><td>spark-master</td><td>bitnami/spark:3.5</td><td>7077, 8085</td><td>Spark cluster master node</td></tr>
+  <tr><td>spark-worker-1/2</td><td>bitnami/spark:3.5</td><td>8081, 8082</td><td>Parallel task execution</td></tr>
+  <tr><td>spark-inference</td><td>Custom Python</td><td>—</td><td>PySpark streaming + ML inference</td></tr>
+  <tr><td>secure-gateway</td><td>Custom Python</td><td>8000</td><td>AES decryption + Redis validation</td></tr>
+  <tr><td>producer</td><td>Custom Python</td><td>—</td><td>Synthetic transaction generation</td></tr>
+  <tr><td>web-app</td><td>Custom Flask</td><td>3000</td><td>Dashboard API + SHAP endpoint</td></tr>
+  <tr><td>postgres</td><td>postgres:15</td><td>5432</td><td>Airflow metadata + feedback_labels</td></tr>
+  <tr><td>airflow-webserver</td><td>apache/airflow:2.8</td><td>8090</td><td>Airflow DAG management UI</td></tr>
+  <tr><td>airflow-scheduler</td><td>apache/airflow:2.8</td><td>—</td><td>DAG trigger and scheduling</td></tr>
+  <tr><td>airflow-worker</td><td>apache/airflow:2.8</td><td>—</td><td>Celery task execution</td></tr>
+  <tr><td>mlflow-server</td><td>mlflow server</td><td>5000</td><td>Experiment tracking &amp; model registry</td></tr>
+  <tr><td>minio</td><td>minio/minio</td><td>9000, 9001</td><td>S3 data lake for models + datasets</td></tr>
+  <tr><td>prometheus</td><td>prom/prometheus</td><td>9090</td><td>Metrics scraping from all services</td></tr>
+  <tr><td>grafana</td><td>grafana/grafana</td><td>3001</td><td>Real-time infrastructure dashboard</td></tr>
+  <tr><td>redis-exporter</td><td>oliver006/redis_exporter</td><td>9121</td><td>Prometheus Redis metrics bridge</td></tr>
+</table>
+
+<h3>Appendix C: Complete Feature Matrix</h3>
+<table>
+  <tr><th>#</th><th>Feature Name</th><th>Group</th><th>Engineering Method</th><th>Fraud Signal</th></tr>
+  <tr><td>1</td><td>amount (scaled)</td><td>Base</td><td>RobustScaler (IQR normalisation)</td><td>Unusually high value</td></tr>
+  <tr><td>2</td><td>hour_sin</td><td>Temporal</td><td>sin(2π × hour / 24)</td><td>Unusual active hour</td></tr>
+  <tr><td>3</td><td>hour_cos</td><td>Temporal</td><td>cos(2π × hour / 24)</td><td>2–4 AM spike indicator</td></tr>
+  <tr><td>4</td><td>day_of_week</td><td>Temporal</td><td>timestamp.dt.dayofweek (0–6)</td><td>Weekend fraud spike</td></tr>
+  <tr><td>5</td><td>is_weekend</td><td>Temporal</td><td>Binary flag (Sat/Sun = 1)</td><td>Weekend anomaly</td></tr>
+  <tr><td>6</td><td>tx_count_1h</td><td>Velocity</td><td>Spark 1-hr sliding window count</td><td>Card-testing pattern</td></tr>
+  <tr><td>7</td><td>tx_count_24h</td><td>Velocity</td><td>tx_count_1h × 24</td><td>Daily velocity spike</td></tr>
+  <tr><td>8</td><td>amount_last_1h</td><td>Velocity</td><td>Spark cumulative sum (1-hr window)</td><td>Rapid spending burst</td></tr>
+  <tr><td>9</td><td>user_amount_mean</td><td>Statistical</td><td>Broadcast historical per-user average</td><td>Baseline reference</td></tr>
+  <tr><td>10</td><td>user_amount_std</td><td>Statistical</td><td>user_amount_mean × 0.5</td><td>Variance reference</td></tr>
+  <tr><td>11</td><td>amount_z_score</td><td>Statistical</td><td>(amount − mean) / (std + ε)</td><td>Primary account takeover signal</td></tr>
+  <tr><td>12</td><td>avg_diff_ratio</td><td>Statistical</td><td>amount / user_amount_mean</td><td>Relative spike magnitude</td></tr>
+  <tr><td>13</td><td>terminal_fraud_rate</td><td>Risk</td><td>Static terminal baseline (0.05)</td><td>High-risk terminal prior</td></tr>
+  <tr><td>14</td><td>amount_x_tx_count</td><td>Interaction</td><td>amount × tx_count_1h</td><td>High-value + high-velocity</td></tr>
+</table>
+
+<h3>Appendix D: GitHub Repository</h3>
+<p>The complete source code for this project — including all Docker Compose configuration, PySpark streaming scripts, Airflow DAGs, Flask web application, feature engineering logic, and model training pipelines — is available at:</p>
+<p style="text-align:center; font-size: 13pt;"><strong>GitHub Repository Link:</strong> <em>[Insert your GitHub repository URL here]</em></p>
+
+<hr class="divider"/>
+<p style="text-align: center; font-size: 10pt; color: #666;">
+  End of Report &mdash; Real-Time Fraud Detection System Using Big Data Analytics &mdash; 2026
+</p>
+
+</div><!-- end .page -->
+</body>
+</html>

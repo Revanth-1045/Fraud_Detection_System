@@ -1,0 +1,21 @@
+transaction_id,user_id,amount,timestamp,tx_count_1h,is_fraud,notes,hour,is_high_risk_hr,avg_amount,avg_diff_ratio,hourly_sum,hour_bucket,batch_velocity,batch_sum,target_fraud,fraud_reason,terminal_id
+TXN_1006,USER_005,1.0,2023-10-27 10:30:01,4,1,Card Testing Start,10,0,625.75,0.0015980823012385138,,2023-10-27 10:00:00,4,2503.0,1,"High aggregate volume (Batch: $2503.00/hr), Possible card testing",0
+TXN_1007,USER_005,1.0,2023-10-27 10:30:05,4,1,Card Testing Velocity,10,0,625.75,0.0015980823012385138,,2023-10-27 10:00:00,4,2503.0,1,"High aggregate volume (Batch: $2503.00/hr), Possible card testing",0
+TXN_1008,USER_005,1.0,2023-10-27 10:30:10,4,1,Card Testing Velocity,10,0,625.75,0.0015980823012385138,,2023-10-27 10:00:00,4,2503.0,1,"High aggregate volume (Batch: $2503.00/hr), Possible card testing",0
+TXN_1009,USER_005,2500.0,2023-10-27 10:31:00,4,1,Card Testing Cashout,10,0,625.75,3.9952057530962843,,2023-10-27 10:00:00,4,2503.0,1,High aggregate volume (Batch: $2503.00/hr),0
+TXN_1012,USER_007,980.0,2023-10-27 11:30:00,3,1,Structuring (Just below $1k),11,0,980.0,1.0,,2023-10-27 11:00:00,3,2940.0,1,"High aggregate volume (Batch: $2940.00/hr), Max limit avoidance (Structuring)",0
+TXN_1013,USER_007,980.0,2023-10-27 11:32:00,3,1,Structuring (Avoids limit),11,0,980.0,1.0,,2023-10-27 11:00:00,3,2940.0,1,"High aggregate volume (Batch: $2940.00/hr), Max limit avoidance (Structuring)",0
+TXN_1014,USER_007,980.0,2023-10-27 11:34:00,3,1,Structuring (Total > $2k),11,0,980.0,1.0,,2023-10-27 11:00:00,3,2940.0,1,"High aggregate volume (Batch: $2940.00/hr), Max limit avoidance (Structuring)",0
+TXN_1020,USER_012,0.01,2023-10-27 14:15:00,2,1,Auth Check / Ping,14,0,0.01,1.0,,2023-10-27 14:00:00,2,0.02,1,Possible card testing,0
+TXN_1021,USER_012,0.01,2023-10-27 14:15:05,2,1,Auth Check / Ping,14,0,0.01,1.0,,2023-10-27 14:00:00,2,0.02,1,Possible card testing,0
+TXN_1025,USER_014,999.99,2023-10-27 16:30:00,2,1,Max Limit Attempt,16,0,999.99,1.0,,2023-10-27 16:00:00,2,1999.98,1,Max limit avoidance (Structuring),0
+TXN_1026,USER_014,999.99,2023-10-27 16:30:05,2,1,Max Limit Retry,16,0,999.99,1.0,,2023-10-27 16:00:00,2,1999.98,1,Max limit avoidance (Structuring),0
+TXN_1030,USER_018,5000.0,2023-10-27 18:15:00,1,1,High Value Anomaly,18,0,5000.0,1.0,,2023-10-27 18:00:00,1,5000.0,1,"High-value transaction (>$4.5k), High aggregate volume (Batch: $5000.00/hr)",0
+TXN_1037,USER_024,2400.0,2023-10-28 02:00:00,2,1,Nighttime Fraud (2AM),2,1,2400.0,1.0,,2023-10-28 02:00:00,2,4800.0,1,"Suspicious activity during high-risk hours, High aggregate volume (Batch: $4800.00/hr)",0
+TXN_1038,USER_024,2400.0,2023-10-28 02:05:00,2,1,Nighttime Fraud (Repeat),2,1,2400.0,1.0,,2023-10-28 02:00:00,2,4800.0,1,"Suspicious activity during high-risk hours, High aggregate volume (Batch: $4800.00/hr)",0
+TXN_1039,USER_025,5.5,2023-10-28 03:15:00,5,1,Card Testing (Night),3,1,104.4,0.05268199233716475,,2023-10-28 03:00:00,5,522.0,1,Suspicious activity during high-risk hours,0
+TXN_1040,USER_025,5.5,2023-10-28 03:15:10,5,1,Card Testing (Night),3,1,104.4,0.05268199233716475,,2023-10-28 03:00:00,5,522.0,1,Suspicious activity during high-risk hours,0
+TXN_1041,USER_025,5.5,2023-10-28 03:15:20,5,1,Card Testing (Night),3,1,104.4,0.05268199233716475,,2023-10-28 03:00:00,5,522.0,1,Suspicious activity during high-risk hours,0
+TXN_1042,USER_025,5.5,2023-10-28 03:15:30,5,1,Card Testing (Night),3,1,104.4,0.05268199233716475,,2023-10-28 03:00:00,5,522.0,1,Suspicious activity during high-risk hours,0
+TXN_1043,USER_025,500.0,2023-10-28 03:16:00,5,1,Cashout after test,3,1,104.4,4.7892720306513406,,2023-10-28 03:00:00,5,522.0,1,Suspicious activity during high-risk hours,0
+TXN_1047,USER_029,9000.0,2023-10-28 09:05:00,1,1,Massive Outlier,9,0,9000.0,1.0,,2023-10-28 09:00:00,1,9000.0,1,"High aggregate volume (Batch: $9000.00/hr), High-value transaction (>$4.5k)",0

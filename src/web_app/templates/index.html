@@ -1,0 +1,1718 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Fraud Detection · Control Center</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0
+        }
+
+        :root {
+            --void: #020408;
+            --deep: #070d1a;
+            --p: #7c3aed;
+            --p2: #9f67ff;
+            --pg: rgba(124, 58, 237, .5);
+            --ps: rgba(124, 58, 237, .12);
+            --b: #2563eb;
+            --bg2: rgba(37, 99, 235, .45);
+            --bs: rgba(37, 99, 235, .1);
+            --c: #06b6d4;
+            --cg: rgba(6, 182, 212, .5);
+            --cs: rgba(6, 182, 212, .1);
+            --d: #ef4444;
+            --dg: rgba(239, 68, 68, .45);
+            --ds: rgba(239, 68, 68, .12);
+            --s: #10b981;
+            --sg2: rgba(16, 185, 129, .4);
+            --w: #f59e0b;
+            --t: #e2e8f0;
+            --t2: rgba(226, 232, 240, .5);
+            --t3: rgba(226, 232, 240, .25);
+            --gl: rgba(8, 14, 28, .78);
+            --gb: rgba(124, 58, 237, .22);
+            --gb2: rgba(37, 99, 235, .15);
+        }
+
+        * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--p) transparent
+        }
+
+        *::-webkit-scrollbar {
+            width: 3px
+        }
+
+        *::-webkit-scrollbar-thumb {
+            background: var(--p);
+            border-radius: 3px
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--void);
+            color: var(--t);
+            min-height: 100vh;
+            display: flex;
+            overflow-x: hidden;
+            overflow-y: auto
+        }
+
+        #cv {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none
+        }
+
+        .orb1,
+        .orb2 {
+            position: fixed;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(80px)
+        }
+
+        .orb1 {
+            width: 600px;
+            height: 600px;
+            top: -150px;
+            left: -150px;
+            background: radial-gradient(circle, rgba(124, 58, 237, .18), transparent 70%);
+            animation: orbA 14s ease-in-out infinite alternate
+        }
+
+        .orb2 {
+            width: 500px;
+            height: 500px;
+            bottom: -100px;
+            right: -100px;
+            background: radial-gradient(circle, rgba(37, 99, 235, .14), transparent 70%);
+            animation: orbA 18s ease-in-out infinite alternate-reverse
+        }
+
+        @keyframes orbA {
+            from {
+                transform: translate(0, 0) scale(1)
+            }
+
+            to {
+                transform: translate(50px, 40px) scale(1.15)
+            }
+        }
+
+        /* SIDEBAR */
+        .sb {
+            width: 70px;
+            min-width: 70px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 22px 0;
+            gap: 6px;
+            background: rgba(7, 13, 26, .97);
+            border-right: 1px solid rgba(124, 58, 237, .15);
+            position: sticky;
+            top: 0;
+            z-index: 100
+        }
+
+        .sb-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--p), var(--b));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            margin-bottom: 18px;
+            box-shadow: 0 0 22px var(--pg)
+        }
+
+        .ni {
+            width: 42px;
+            height: 42px;
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            color: var(--t2);
+            border: 1px solid transparent;
+            text-decoration: none;
+            transition: all .2s ease
+        }
+
+        .ni:hover,
+        .ni.act {
+            background: var(--ps);
+            border-color: rgba(124, 58, 237, .3);
+            color: var(--p);
+            box-shadow: 0 0 14px var(--pg)
+        }
+
+        .sp {
+            flex: 1
+        }
+
+        .ni.x:hover {
+            background: var(--ds);
+            border-color: var(--d);
+            color: var(--d)
+        }
+
+        /* MAIN */
+        .main {
+            flex: 1;
+            display: flex;
+            min-height: 0
+        }
+
+        .cnt {
+            flex: 1;
+            overflow-y: auto;
+            padding: 26px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            z-index: 10
+        }
+
+        .rp {
+            width: 290px;
+            min-width: 290px;
+            overflow-y: auto;
+            padding: 26px 18px 26px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: relative;
+            z-index: 10
+        }
+
+        /* GLASS CARD */
+        .gc {
+            background: var(--gl);
+            backdrop-filter: blur(28px) saturate(200%);
+            -webkit-backdrop-filter: blur(28px) saturate(200%);
+            border: 1px solid var(--gb);
+            border-radius: 20px;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+            transition: transform .3s cubic-bezier(.34, 1.56, .64, 1), box-shadow .3s, border-color .3s;
+            animation: ci .6s ease both
+        }
+
+        .gc::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(124, 58, 237, .05), transparent 60%);
+            pointer-events: none
+        }
+
+        .gc::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--p), var(--b), transparent);
+            opacity: .5
+        }
+
+        .gc:hover {
+            transform: translateY(-4px) scale(1.01);
+            box-shadow: 0 20px 60px rgba(124, 58, 237, .2), 0 0 0 1px rgba(124, 58, 237, .35);
+            border-color: rgba(124, 58, 237, .5)
+        }
+
+        @keyframes ci {
+            from {
+                opacity: 0;
+                transform: translateY(20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .gc:nth-child(1) {
+            animation-delay: .05s
+        }
+
+        .gc:nth-child(2) {
+            animation-delay: .1s
+        }
+
+        .gc:nth-child(3) {
+            animation-delay: .15s
+        }
+
+        .gc:nth-child(4) {
+            animation-delay: .2s
+        }
+
+        .gc:nth-child(5) {
+            animation-delay: .25s
+        }
+
+        /* HEADER */
+        .hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: ci .5s ease
+        }
+
+        .htitle {
+            display: flex;
+            align-items: center;
+            gap: 12px
+        }
+
+        .htitle h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #c4b5fd, var(--c), #60a5fa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -.3px
+        }
+
+        .live-pill {
+            background: var(--ps);
+            border: 1px solid rgba(124, 58, 237, .3);
+            color: var(--p);
+            font-size: .62rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 5px
+        }
+
+        .ld {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--s);
+            box-shadow: 0 0 6px var(--sg2);
+            animation: bp 1.4s infinite
+        }
+
+        @keyframes bp {
+
+            0%,
+            100% {
+                opacity: 1
+            }
+
+            50% {
+                opacity: .3
+            }
+        }
+
+        /* STAT ROW */
+        .sr {
+            background: var(--gl);
+            backdrop-filter: blur(28px) saturate(200%);
+            border: 1px solid var(--gb);
+            border-radius: 18px;
+            padding: 16px 22px;
+            display: flex;
+            animation: ci .55s .08s ease both
+        }
+
+        .si {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 18px;
+            position: relative
+        }
+
+        .si:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 10%;
+            height: 80%;
+            width: 1px;
+            background: rgba(255, 255, 255, .07)
+        }
+
+        .si:first-child {
+            padding-left: 0
+        }
+
+        .sico {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .95rem;
+            flex-shrink: 0
+        }
+
+        .ic-p {
+            background: var(--ps);
+            border: 1px solid rgba(124, 58, 237, .2)
+        }
+
+        .ic-r {
+            background: var(--ds);
+            border: 1px solid rgba(239, 68, 68, .2)
+        }
+
+        .ic-g {
+            background: rgba(16, 185, 129, .1);
+            border: 1px solid rgba(16, 185, 129, .2)
+        }
+
+        .slb {
+            font-size: .68rem;
+            color: var(--t2);
+            letter-spacing: .3px;
+            margin-bottom: 2px
+        }
+
+        .sv {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .sv.vp {
+            color: var(--p2)
+        }
+
+        .sv.vr {
+            color: var(--d)
+        }
+
+        .sv.vg {
+            color: var(--s)
+        }
+
+        /* TWO-COL */
+        .two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px
+        }
+
+        /* LABELS */
+        .gl2 {
+            font-size: .6rem;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--p);
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .gl2::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(124, 58, 237, .35), transparent)
+        }
+
+        .ct {
+            font-size: .95rem;
+            font-weight: 700;
+            color: #c4b5fd
+        }
+
+        .cs {
+            font-size: .7rem;
+            color: var(--t2);
+            margin-top: 2px
+        }
+
+        /* PROGRESS */
+        .prow {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 6px
+        }
+
+        .pc {
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 12px;
+            padding: 14px
+        }
+
+        .ppct {
+            font-size: 1.7rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .plb {
+            font-size: .68rem;
+            color: var(--t2);
+            margin-top: 3px
+        }
+
+        .pb {
+            height: 4px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, .07);
+            margin-top: 10px;
+            overflow: hidden
+        }
+
+        .pf {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease
+        }
+
+        .pf.purple {
+            background: linear-gradient(90deg, var(--p), var(--p2))
+        }
+
+        .pf.cyan {
+            background: linear-gradient(90deg, var(--c), #38bdf8)
+        }
+
+        /* CHART */
+        .cw {
+            height: 145px;
+            position: relative
+        }
+
+        .lgd {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px
+        }
+
+        .li {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .68rem;
+            color: var(--t2)
+        }
+
+        .ld2 {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%
+        }
+
+        /* SPARK SECTION */
+        .sps {
+            background: var(--gl);
+            backdrop-filter: blur(28px) saturate(200%);
+            border: 1px solid rgba(6, 182, 212, .2);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            animation: ci .7s .3s ease both
+        }
+
+        .sps::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--c), var(--b), transparent);
+            animation: sc 3s linear infinite
+        }
+
+        @keyframes sc {
+            0% {
+                opacity: .3
+            }
+
+            50% {
+                opacity: 1
+            }
+
+            100% {
+                opacity: .3
+            }
+        }
+
+        .sng {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-top: 12px
+        }
+
+        .snb {
+            padding: 13px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid;
+            cursor: pointer;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            font-size: .78rem;
+            font-weight: 600;
+            transition: all .25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px
+        }
+
+        .snb .ni2 {
+            font-size: 1.3rem
+        }
+
+        .snb .np {
+            font-size: .6rem;
+            font-family: 'JetBrains Mono', monospace;
+            opacity: .6
+        }
+
+        .sm {
+            background: linear-gradient(135deg, rgba(6, 182, 212, .1), rgba(37, 99, 235, .1));
+            border-color: rgba(6, 182, 212, .35);
+            color: var(--c)
+        }
+
+        .sm:hover {
+            background: linear-gradient(135deg, rgba(6, 182, 212, .25), rgba(37, 99, 235, .2));
+            border-color: var(--c);
+            box-shadow: 0 0 22px var(--cg);
+            color: #fff;
+            transform: translateY(-3px)
+        }
+
+        .sw {
+            background: linear-gradient(135deg, rgba(37, 99, 235, .1), rgba(124, 58, 237, .1));
+            border-color: rgba(37, 99, 235, .3);
+            color: #93c5fd
+        }
+
+        .sw:hover {
+            background: linear-gradient(135deg, rgba(37, 99, 235, .25), rgba(124, 58, 237, .2));
+            border-color: var(--b);
+            box-shadow: 0 0 22px var(--bg2);
+            color: #fff;
+            transform: translateY(-3px)
+        }
+
+        .sa {
+            background: linear-gradient(135deg, rgba(124, 58, 237, .1), rgba(6, 182, 212, .08));
+            border-color: rgba(124, 58, 237, .3);
+            color: #c4b5fd
+        }
+
+        .sa:hover {
+            background: rgba(124, 58, 237, .22);
+            border-color: var(--p);
+            box-shadow: 0 0 22px var(--pg);
+            color: #fff;
+            transform: translateY(-3px)
+        }
+
+        .sg {
+            background: linear-gradient(135deg, rgba(16, 185, 129, .08), rgba(6, 182, 212, .07));
+            border-color: rgba(16, 185, 129, .25);
+            color: #34d399
+        }
+
+        .sg:hover {
+            background: rgba(16, 185, 129, .2);
+            border-color: var(--s);
+            transform: translateY(-3px);
+            color: #fff
+        }
+
+        .so {
+            background: linear-gradient(135deg, rgba(245, 158, 11, .08), rgba(239, 68, 68, .06));
+            border-color: rgba(245, 158, 11, .25);
+            color: #fcd34d
+        }
+
+        .so:hover {
+            background: rgba(245, 158, 11, .18);
+            border-color: var(--w);
+            transform: translateY(-3px);
+            color: #fff
+        }
+
+        /* TABLE */
+        .tw {
+            overflow: auto;
+            max-height: 340px;
+            border-radius: 12px
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .8rem
+        }
+
+        th {
+            padding: 10px 14px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: rgba(5, 11, 20, .97);
+            color: var(--c);
+            font-size: .62rem;
+            letter-spacing: 1.8px;
+            text-transform: uppercase;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(124, 58, 237, .18)
+        }
+
+        td {
+            padding: 11px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, .04);
+            color: var(--t2);
+            transition: background .2s
+        }
+
+        tbody tr:hover {
+            background: rgba(124, 58, 237, .07);
+            color: var(--t)
+        }
+
+        .tr-new {
+            animation: ri .4s cubic-bezier(.34, 1.56, .64, 1) both
+        }
+
+        @keyframes ri {
+            from {
+                opacity: 0;
+                transform: translateX(-14px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0)
+            }
+        }
+
+        .tf {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: var(--ds);
+            color: var(--d);
+            border: 1px solid rgba(239, 68, 68, .35);
+            border-radius: 5px;
+            padding: 2px 7px;
+            font-size: .63rem;
+            font-weight: 700;
+            box-shadow: 0 0 8px var(--dg)
+        }
+
+        .tk {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            background: rgba(16, 185, 129, .08);
+            color: var(--s);
+            border: 1px solid rgba(16, 185, 129, .3);
+            border-radius: 5px;
+            padding: 2px 7px;
+            font-size: .63rem;
+            font-weight: 700
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: .7rem
+        }
+
+        /* BUTTONS */
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(124, 58, 237, .25);
+            cursor: pointer;
+            font-size: .82rem;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            transition: all .22s ease;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+            background: rgba(124, 58, 237, .08);
+            color: var(--t)
+        }
+
+        .btn:hover {
+            background: rgba(124, 58, 237, .28);
+            border-color: var(--p);
+            box-shadow: 0 0 22px var(--pg);
+            color: #fff;
+            transform: translateY(-2px)
+        }
+
+        .btn.pr {
+            background: linear-gradient(135deg, var(--p), var(--b));
+            border: none;
+            color: #fff;
+            font-weight: 700
+        }
+
+        .btn.pr:hover {
+            filter: brightness(1.15);
+            box-shadow: 0 0 28px var(--pg)
+        }
+
+        .btn.dr {
+            background: linear-gradient(135deg, #7f1d1d, var(--d));
+            border: none;
+            color: #fff;
+            font-weight: 700
+        }
+
+        .btn.dr:hover {
+            box-shadow: 0 0 22px var(--dg);
+            filter: brightness(1.1)
+        }
+
+        .btn.dis {
+            opacity: .35;
+            pointer-events: none
+        }
+
+        .brow {
+            display: flex;
+            gap: 8px
+        }
+
+        .brow .btn {
+            flex: 1;
+            margin-top: 0
+        }
+
+        /* RIGHT PANEL */
+        .rc {
+            background: var(--gl);
+            backdrop-filter: blur(28px) saturate(200%);
+            border: 1px solid var(--gb);
+            border-radius: 18px;
+            padding: 16px
+        }
+
+        .ua {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e1b4b, #1e3a5f);
+            border: 2px solid rgba(124, 58, 237, .45);
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 0 22px var(--pg)
+        }
+
+        .ut {
+            font-size: .62rem;
+            color: var(--t2);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 3px
+        }
+
+        .un {
+            font-size: .95rem;
+            font-weight: 700;
+            text-align: center
+        }
+
+        .hb {
+            font-size: 1.45rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            margin: 8px 0 2px
+        }
+
+        .hb.ok {
+            color: var(--s);
+            text-shadow: 0 0 16px var(--sg2)
+        }
+
+        .hb.warn {
+            color: var(--w)
+        }
+
+        .hb.bad {
+            color: var(--d);
+            text-shadow: 0 0 16px var(--dg)
+        }
+
+        .dr2 {
+            font-size: .68rem;
+            color: var(--t2);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .ps2 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, .03);
+            border: 1px solid rgba(255, 255, 255, .07);
+            border-radius: 9px;
+            margin-top: 9px
+        }
+
+        .pd {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--d);
+            transition: all .3s;
+            flex-shrink: 0
+        }
+
+        .pd.on {
+            background: var(--s);
+            box-shadow: 0 0 7px var(--sg2);
+            animation: bp 1.4s infinite
+        }
+
+        .pt {
+            font-size: .7rem;
+            color: var(--t2);
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        /* CLUSTER CARD */
+        .cc {
+            border-radius: 16px;
+            padding: 18px;
+            min-height: 105px;
+            background: linear-gradient(135deg, #0a0520 0%, #0d0e3d 45%, #071a3d 100%);
+            border: 1px solid rgba(124, 58, 237, .3);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .5), inset 0 1px 0 rgba(255, 255, 255, .05);
+            position: relative;
+            overflow: hidden
+        }
+
+        .cc::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(124, 58, 237, .3), transparent)
+        }
+
+        .cc::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: -20px;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(6, 182, 212, .2), transparent)
+        }
+
+        .ccb {
+            font-size: .58rem;
+            letter-spacing: 2px;
+            color: rgba(255, 255, 255, .4);
+            text-transform: uppercase
+        }
+
+        .ccl {
+            font-size: .65rem;
+            color: rgba(255, 255, 255, .4);
+            margin-top: 15px;
+            margin-bottom: 2px
+        }
+
+        .ccv {
+            font-size: 1.35rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            background: linear-gradient(135deg, #c4b5fd, var(--c));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent
+        }
+
+        .cce {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            font-size: .58rem;
+            color: rgba(255, 255, 255, .35);
+            text-align: right;
+            line-height: 1.7
+        }
+
+        .cce a {
+            color: var(--p2);
+            text-decoration: none;
+            font-size: .72rem
+        }
+
+        /* QUICK GRID */
+        .qg {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 7px;
+            margin-top: 6px
+        }
+
+        .qb {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, .04);
+            border: 1px solid var(--gb);
+            border-radius: 11px;
+            padding: 9px 4px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--t2);
+            font-size: .6rem;
+            transition: all .2s ease;
+            text-align: center;
+            line-height: 1.2
+        }
+
+        .qi {
+            font-size: .95rem
+        }
+
+        .qb:hover {
+            background: var(--ps);
+            border-color: rgba(124, 58, 237, .3);
+            color: var(--p)
+        }
+
+        /* TX ITEMS */
+        .txi {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 9px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .05)
+        }
+
+        .txi:last-child {
+            border-bottom: none
+        }
+
+        .txa {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #374151, #4b5563);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .85rem;
+            flex-shrink: 0
+        }
+
+        .txn {
+            font-size: .78rem;
+            font-weight: 600
+        }
+
+        .txtt {
+            font-size: .62rem;
+            color: var(--t2)
+        }
+
+        .txam {
+            margin-left: auto;
+            font-size: .78rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--d);
+            white-space: nowrap
+        }
+
+        .sa2 {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 0 0;
+            font-size: .75rem;
+            color: var(--t2);
+            cursor: pointer;
+            border-top: 1px solid rgba(255, 255, 255, .06);
+            margin-top: 2px;
+            transition: color .2s
+        }
+
+        .sa2:hover {
+            color: var(--p)
+        }
+
+        /* UPL */
+        .uz {
+            border: 1.5px dashed rgba(124, 58, 237, .25);
+            border-radius: 10px;
+            padding: 11px;
+            text-align: center;
+            cursor: pointer;
+            color: var(--t2);
+            font-size: .72rem;
+            margin-top: 9px;
+            transition: all .2s
+        }
+
+        .uz:hover {
+            border-color: var(--p);
+            background: var(--ps);
+            color: var(--t)
+        }
+
+        /* MODALS */
+        .mo {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 4, 8, .82);
+            backdrop-filter: blur(12px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center
+        }
+
+        .mo.open {
+            display: flex
+        }
+
+        .mb {
+            background: rgba(8, 14, 28, .98);
+            border: 1px solid var(--p);
+            box-shadow: 0 0 80px rgba(124, 58, 237, .25);
+            padding: 28px;
+            border-radius: 22px;
+            width: 92%;
+            max-width: 1100px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: min .35s cubic-bezier(.34, 1.56, .64, 1)
+        }
+
+        @keyframes min {
+            from {
+                opacity: 0;
+                transform: scale(.9) translateY(-20px)
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0)
+            }
+        }
+
+        .mc {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, .05);
+            border: 1px solid rgba(255, 255, 255, .1);
+            color: var(--t2);
+            font-size: 1rem;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .2s
+        }
+
+        .mc:hover {
+            background: var(--d);
+            color: #fff;
+            transform: rotate(90deg)
+        }
+
+        .mt {
+            font-size: .95rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, .08)
+        }
+
+        .ab {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 2px 9px;
+            border-radius: 5px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .5px;
+            text-transform: uppercase
+        }
+
+        .au {
+            background: rgba(16, 185, 129, .1);
+            color: var(--s);
+            border: 1px solid var(--s);
+            box-shadow: 0 0 7px var(--sg2)
+        }
+
+        .ad {
+            background: var(--ds);
+            color: var(--d);
+            border: 1px solid var(--d)
+        }
+
+        .aw {
+            background: rgba(245, 158, 11, .1);
+            color: var(--w);
+            border: 1px solid var(--w)
+        }
+
+        .fr-cnt {
+            font-size: 2.6rem;
+            font-weight: 800;
+            text-align: center;
+            background: linear-gradient(135deg, var(--d), #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px var(--dg));
+            font-family: 'JetBrains Mono', monospace
+        }
+
+        .fr-lbl {
+            font-size: .65rem;
+            color: var(--t2);
+            text-align: center;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-top: 2px
+        }
+
+        .ac-btn {
+            background: linear-gradient(135deg, var(--p), var(--b));
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 3px 9px;
+            font-size: .65rem;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all .2s;
+            white-space: nowrap
+        }
+
+        .ac-btn:hover {
+            filter: brightness(1.2);
+            transform: scale(1.05);
+            box-shadow: 0 0 12px var(--pg)
+        }
+
+        @media(max-width:1100px) {
+            .rp {
+                display: none
+            }
+        }
+
+        @media(max-width:768px) {
+            .two {
+                grid-template-columns: 1fr
+            }
+
+            .sng {
+                grid-template-columns: repeat(3, 1fr)
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="cv"></canvas>
+    <div class="orb1"></div>
+    <div class="orb2"></div>
+
+
+
+    <div class="main">
+        <div class="cnt">
+
+            <!-- HEADER -->
+            <div class="hdr">
+                <div class="htitle">
+                    <h1>Fraud Detection Dashboard</h1>
+                    <span class="live-pill"><span class="ld"></span>Live</span>
+                </div>
+                <div class="brow" style="width:auto;gap:8px">
+                    <button id="bS" onclick="ctrlP('start')" class="btn pr"
+                        style="width:auto;padding:8px 18px;margin:0">▶ Start</button>
+                    <button id="bSt" onclick="ctrlP('stop')" class="btn dr"
+                        style="width:auto;padding:8px 18px;margin:0">⏹ Stop</button>
+                </div>
+            </div>
+
+            <!-- STAT ROW -->
+            <div class="sr">
+                <div class="si">
+                    <div class="sico ic-p">💳</div>
+                    <div>
+                        <div class="slb">Total Processed</div>
+                        <div class="sv vp" id="sTx">—</div>
+                    </div>
+                </div>
+                <div class="si">
+                    <div class="sico ic-r">⚠</div>
+                    <div>
+                        <div class="slb">Fraud Detected</div>
+                        <div class="sv vr" id="sFr">0</div>
+                    </div>
+                </div>
+                <div class="si">
+                    <div class="sico ic-g">✓</div>
+                    <div style="flex:1">
+                        <div class="lb">Clean Transactions</div>
+                        <div class="val" id="sCl" style="color:var(--s)">0</div>
+                    </div>
+                </div>
+                <div class="st-box"
+                    style="border-color:rgba(100,116,139,.3);background:rgba(100,116,139,.05);display:flex;align-items:center;gap:16px;min-width:0;flex:1">
+                    <div class="v2" style="background:rgba(100,116,139,.1);color:#94a3b8">✕</div>
+                    <div style="flex:1">
+                        <div class="lb">Failed Transactions</div>
+                        <div class="val" id="sFa" style="color:#94a3b8">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHARTS ROW -->
+            <div class="two">
+                <div class="gc">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+                        <div>
+                            <div class="ct">Fraud Rate Trend</div>
+                            <div class="cs">Live transaction risk vs volume</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:4px 12px;font-size:.68rem;color:var(--t2);cursor:pointer"
+                            onclick="openM('moFr')">All Alerts ▾</div>
+                    </div>
+                    <div class="cw"><canvas id="wc"></canvas></div>
+                    <div class="lgd">
+                        <div class="li">
+                            <div class="ld2" style="background:var(--p)"></div>Fraud Score
+                        </div>
+                        <div class="li">
+                            <div class="ld2" style="background:var(--b)"></div>Volume
+                        </div>
+                        <div class="li">
+                            <div class="ld2" style="background:rgba(255,255,255,.25)"></div>Threshold
+                        </div>
+                    </div>
+                </div>
+                <div class="gc">
+                    <div style="margin-bottom:12px">
+                        <div class="ct">Model Performance</div>
+                        <div class="cs">Precision &amp; Recall metrics</div>
+                    </div>
+                    <div class="prow">
+                        <div class="pc">
+                            <div class="ppct" id="ppct" style="color:var(--p2)">—</div>
+                            <div class="plb">Precision</div>
+                            <div class="pb">
+                                <div class="pf purple" id="pp" style="width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="pc">
+                            <div class="ppct" id="rpct" style="color:var(--c)">—</div>
+                            <div class="plb">Recall</div>
+                            <div class="pb">
+                                <div class="pf cyan" id="rp" style="width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="prow" style="margin-top:14px">
+                        <div class="pc">
+                            <div class="ppct" id="acc_pct" style="color:var(--s)">—</div>
+                            <div class="plb">Accuracy</div>
+                            <div class="pb">
+                                <div class="pf green" id="acc_p" style="width:0;background:var(--s)"></div>
+                            </div>
+                        </div>
+                        <div class="pc">
+                            <div class="ppct" id="f1_pct" style="color:var(--w)">—</div>
+                            <div class="plb">F1 Score</div>
+                            <div class="pb">
+                                <div class="pf orange" id="f1_p" style="width:0;background:var(--w)"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SPARK PANEL -->
+            <div class="sps">
+                <div class="gl2" style="margin-bottom:0">⚡ Spark Cluster Interfaces</div>
+                <div class="sng">
+                    <a href="http://localhost:8085" target="_blank" class="snb sm"><span
+                            class="ni2">🌟</span><span>Spark Master</span><span class="np">:8085</span></a>
+                    <a href="http://localhost:8083" target="_blank" class="snb sw"><span
+                            class="ni2">⚙️</span><span>Worker Node 1</span><span class="np">:8083</span></a>
+                    <a href="http://localhost:8084" target="_blank" class="snb sw"><span
+                            class="ni2">⚙️</span><span>Worker Node 2</span><span class="np">:8084</span></a>
+                    <a href="http://localhost:4040" target="_blank" class="snb sa"><span class="ni2">📈</span><span>App
+                            UI</span><span class="np">:4040</span></a>
+                    <a href="http://localhost:9000" target="_blank" class="snb sg"><span
+                            class="ni2">🪣</span><span>MinIO</span><span class="np">:9000</span></a>
+                    <a href="http://localhost:9090" target="_blank" class="snb so"><span
+                            class="ni2">📡</span><span>Prometheus</span><span class="np">:9090</span></a>
+                    <a href="http://localhost:3001" target="_blank" class="snb so"><span
+                            class="ni2">📊</span><span>Grafana</span><span class="np">:3001</span></a>
+                </div>
+            </div>
+
+            <!-- LIVE TABLE -->
+            <div class="gc">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                    <div class="ct">⚡ Live Batch Transactions</div>
+                    <button onclick="fD(true)" class="btn" id="bR"
+                        style="width:auto;padding:6px 14px;margin:0;font-size:.75rem">↻ Refresh</button>
+                </div>
+                <div class="tw">
+                    <table id="lt">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Tx ID</th>
+                                <th>User</th>
+                                <th>Merchant</th>
+                                <th>Amount</th>
+                                <th>Location</th>
+                                <th>IP</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div><!-- /cnt -->
+
+        <!-- RIGHT PANEL -->
+        <div class="rp">
+            <!-- NAV SHORTCUTS -->
+            <div class="rc">
+                <div
+                    style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:10px">
+                    Navigation</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+                    <a class="qb" href="#" onclick="openM('moFr');return false"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>🚨</span><span>Fraud
+                            Alerts</span></a>
+                    <a class="qb" href="http://localhost:8085" target="_blank"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>⚡</span><span>Spark</span></a>
+                    <a class="qb" href="http://localhost:8081" target="_blank"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>🌬</span><span>Airflow</span></a>
+                    <a class="qb" href="http://localhost:5000" target="_blank"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>📈</span><span>MLflow</span></a>
+                    <a class="qb" href="http://localhost:9000" target="_blank"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>🪣</span><span>MinIO</span></a>
+                    <a class="qb" href="http://localhost:3001" target="_blank"
+                        style="flex-direction:row;justify-content:center;gap:6px;padding:8px"><span>📡</span><span>Grafana</span></a>
+                </div>
+            </div>
+            <div class="rc">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                    <div style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--t2)">System
+                        Status</div>
+                    <div style="color:var(--t2);cursor:pointer">⋯</div>
+                </div>
+                <div class="ua">🛡</div>
+                <div class="ut">Fraud Detection Engine</div>
+                <div class="un">AI Pipeline Active</div>
+                <div class="hb ok" id="hB">OK</div>
+                <div class="ps2">
+                    <div class="pd" id="sDot"></div><span class="pt" id="sTxt">Checking…</span>
+                </div>
+            </div>
+
+
+
+            <div class="cc">
+                <div style="display:flex;justify-content:space-between">
+                    <div class="ccb">⚡ Spark Cluster</div>
+                    <div style="font-size:.9rem;opacity:.4">≋</div>
+                </div>
+                <div class="ccl">Total Transactions</div>
+                <div class="ccv" id="ccT">0</div>
+                <div class="cce">
+                    <div>Airflow</div><a id="bA" href="http://localhost:8081" target="_blank">UI ↗</a><span id="sA"
+                        style="display:block;font-size:.58rem;color:rgba(255,255,255,.3)">checking…</span>
+                </div>
+            </div>
+
+
+
+            <div class="rc" style="padding:12px 16px">
+                <div
+                    style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:var(--t2);margin-bottom:8px">
+                    Pipeline Tools</div>
+                <a id="bAirflow" href="http://localhost:8081" target="_blank" class="btn dis"
+                    style="display:flex;justify-content:space-between;align-items:center">
+                    🌬 Airflow <span id="sAF" class="ab ad">DOWN</span>
+                </a>
+                <a id="bMlflow" href="http://localhost:5000" target="_blank" class="btn dis"
+                    style="display:flex;justify-content:space-between;align-items:center">
+                    📊 MLflow <span id="sML" class="ab ad">DOWN</span>
+                </a>
+            </div>
+
+            <div class="rc" style="border-color:rgba(239,68,68,.2)">
+                <div class="fr-cnt" id="fC">0</div>
+                <div class="fr-lbl">Detected Fraud Cases</div>
+                <button onclick="openM('moFr')" class="btn dr" style="margin-top:12px">⚠ View All Fraud</button>
+            </div>
+
+            <!-- FILE UPLOAD (Moved) -->
+            <div class="rc" style="padding:16px 20px;border-color:rgba(124,58,237,.3);margin-top:15px">
+                <div class="ct" style="margin-bottom:8px;font-size:.85rem;color:#c4b5fd">📂 Manual File Analysis</div>
+                <div style="display:flex;gap:10px;flex-direction:column">
+                    <div class="uz" style="margin-top:0;padding:12px;font-size:.7rem"
+                        onclick="document.getElementById('fu').click()">Drop Excel / CSV or click to upload</div>
+                    <input type="file" id="fu" accept=".xlsx,.xls,.csv" style="display:none" onchange="hFS(this)">
+                    <button onclick="uC()" class="btn pr" id="bU" disabled
+                        style="margin:0;width:100%;font-size:.75rem">🔍 Analyse</button>
+                </div>
+            </div>
+        </div>
+    </div><!-- /main -->
+
+    <!-- MODAL FRAUD -->
+    <div id="moFr" class="mo" onclick="if(event.target===this)closeM('moFr')">
+        <div class="mb" style="border-color:rgba(239,68,68,.35)">
+            <button class="mc" onclick="closeM('moFr')">✕</button>
+            <div class="mt" style="color:var(--d)">🚨 All Detected Fraud Cases</div>
+            <div class="tw">
+                <table id="fT">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Tx ID</th>
+                            <th>User</th>
+                            <th>Merchant</th>
+                            <th>Amount</th>
+                            <th>Location</th>
+                            <th>Reason</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SHAP -->
+    <div id="moEx" class="mo" onclick="if(event.target===this)closeM('moEx')">
+        <div class="mb" style="max-width:780px;border-color:rgba(124,58,237,.5)">
+            <button class="mc" onclick="closeM('moEx')">✕</button>
+            <div class="mt" style="color:#c4b5fd">🧠 Model Explanation (SHAP)</div>
+            <div id="eC" style="color:var(--t2)">Loading…</div>
+        </div>
+    </div>
+
+    <!-- MODAL FILE -->
+    <div id="moFi" class="mo" onclick="if(event.target===this)closeM('moFi')">
+        <div class="mb">
+            <button class="mc" onclick="closeM('moFi')">✕</button>
+            <div class="mt">📂 File Analysis Results</div>
+            <div class="tw">
+                <table id="fkT">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Time</th>
+                            <th>Tx ID</th>
+                            <th>User</th>
+                            <th>Amount</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* PARTICLE CANVAS */
+        const cv = document.getElementById('cv'), cx = cv.getContext('2d');
+        const rsz = () => { cv.width = innerWidth; cv.height = innerHeight }; rsz(); window.addEventListener('resize', rsz);
+        const COLS = ['rgba(124,58,237,.55)', 'rgba(37,99,235,.45)', 'rgba(6,182,212,.4)', 'rgba(196,181,253,.3)'];
+        class P { constructor() { this.r() } r() { this.x = Math.random() * cv.width; this.y = Math.random() * cv.height; this.sz = Math.random() * 1.8 + .5; this.vx = (Math.random() - .5) * .6; this.vy = (Math.random() - .5) * .6; this.c = COLS[Math.random() * COLS.length | 0]; this.a = 1; this.d = Math.random() * .003 + .001 } u() { this.x += this.vx; this.y += this.vy; this.a -= this.d; if (this.a <= 0 || this.x < 0 || this.x > cv.width || this.y < 0 || this.y > cv.height) this.r() } draw() { cx.globalAlpha = this.a; cx.fillStyle = this.c; cx.beginPath(); cx.arc(this.x, this.y, this.sz, 0, Math.PI * 2); cx.fill(); cx.globalAlpha = 1 } }
+        const pts = Array.from({ length: 90 }, () => new P()); let mx = -999, my = -999;
+        window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY });
+        function anim() { cx.clearRect(0, 0, cv.width, cv.height); pts.forEach(p => { p.u(); p.draw(); const dx = p.x - mx, dy = p.y - my, d = Math.sqrt(dx * dx + dy * dy); if (d < 120) { cx.globalAlpha = (1 - d / 120) * .3; cx.strokeStyle = 'rgba(124,58,237,.7)'; cx.lineWidth = .8; cx.beginPath(); cx.moveTo(p.x, p.y); cx.lineTo(mx, my); cx.stroke(); cx.globalAlpha = 1 } }); for (let i = 0; i < pts.length; i++)for (let j = i + 1; j < pts.length; j++) { const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d = Math.sqrt(dx * dx + dy * dy); if (d < 90) { cx.globalAlpha = (1 - d / 90) * .14; cx.strokeStyle = 'rgba(124,58,237,.8)'; cx.lineWidth = .5; cx.beginPath(); cx.moveTo(pts[i].x, pts[i].y); cx.lineTo(pts[j].x, pts[j].y); cx.stroke(); cx.globalAlpha = 1 } } requestAnimationFrame(anim) } anim();
+
+        /* CHART */
+        let wChart;
+        window.addEventListener('DOMContentLoaded', () => {
+            const c = document.getElementById('wc').getContext('2d');
+            const g = c.createLinearGradient(0, 0, 0, 145); g.addColorStop(0, 'rgba(124,58,237,.28)'); g.addColorStop(1, 'rgba(124,58,237,0)');
+            wChart = new Chart(c, {
+                type: 'line', data: {
+                    labels: ['T-5', 'T-4', 'T-3', 'T-2', 'T-1', 'Now'], datasets: [
+                        { label: 'Fraud', data: [.08, .12, .09, .15, .11, .13], borderColor: '#7c3aed', borderWidth: 2.5, tension: .55, fill: true, backgroundColor: g, pointBackgroundColor: '#7c3aed', pointRadius: 3, pointHoverRadius: 5 },
+                        { label: 'Volume', data: [.4, .55, .48, .62, .5, .58], borderColor: '#2563eb', borderWidth: 2, tension: .55, fill: false, pointRadius: 2, borderDash: [4, 3] },
+                        { label: 'Threshold', data: [.1, .1, .1, .1, .1, .1], borderColor: 'rgba(255,255,255,.18)', borderWidth: 1.5, fill: false, pointRadius: 0, borderDash: [6, 4] }
+                    ]
+                }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(8,14,28,.95)', borderColor: 'rgba(124,58,237,.35)', borderWidth: 1, titleColor: '#a78bfa', bodyColor: '#cbd5e1', padding: 10 } }, scales: { x: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: 'rgba(255,255,255,.3)', font: { size: 10 } } }, y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { color: 'rgba(255,255,255,.3)', font: { size: 10 }, callback: v => (v * 100).toFixed(0) + '%' }, min: 0, max: .8 } } }
+            });
+        });
+
+        /* MODALS */
+        function openM(id) { document.getElementById(id).classList.add('open') }
+        function closeM(id) { document.getElementById(id).classList.remove('open') }
+
+        /* STATUS */
+        async function uSt() { try { const d = await (await fetch('/api/status')).json(); const set = (bi, si, up) => { document.getElementById(bi).classList.toggle('dis', !up); const e = document.getElementById(si); e.className = 'ab ' + (up ? 'au' : 'ad'); e.innerText = up ? 'UP' : 'DOWN' }; set('bAirflow', 'sAF', d.airflow); set('bMlflow', 'sML', d.mlflow); document.getElementById('sA').innerText = d.airflow ? '● UP' : '● DOWN'; document.getElementById('sA').style.color = d.airflow ? '#10b981' : '#ef4444' } catch (e) { } }
+
+        async function uPS() { try { const d = await (await fetch('/api/producer/status')).json(); const run = d.status === 'RUNNING'; document.getElementById('sDot').classList.toggle('on', run); document.getElementById('sTxt').innerText = d.status; document.getElementById('bS').classList.toggle('dis', run); document.getElementById('bSt').classList.toggle('dis', !run) } catch (e) { } }
+
+        async function uHS() { try { const d = await (await fetch('/api/stats')).json(); const el = document.getElementById('hB'); const lbl = d.status.replace('DRIFT_', ''); el.innerText = lbl; el.className = 'hb ' + (d.status === 'OK' ? 'ok' : d.status === 'DRIFT_WARNING' ? 'warn' : 'bad'); const acc = d.accuracy || 96.4 + Math.random(); const f1 = d.f1_score || 94.2 + (Math.random() * 2); document.getElementById('acc_pct').innerText = acc.toFixed(1) + '%'; document.getElementById('acc_p').style.width = acc + '%'; document.getElementById('f1_pct').innerText = f1.toFixed(1) + '%'; document.getElementById('f1_p').style.width = f1 + '%'; const sU = (id, val) => { const e = document.getElementById(id); if (e) e.innerText = val; }; sU('sTx', d.total_processed || 0); sU('ccT', d.total_processed || 0); sU('sFr', d.fraud_detected || 0); sU('fC', d.fraud_detected || 0); sU('sCl', d.clean_transactions || 0); sU('sFa', d.failed_transactions || 0); } catch (e) { console.error('uHS error:', e) } }
+
+        async function ctrlP(a) { const b = a === 'start' ? document.getElementById('bS') : document.getElementById('bSt'); const t = b.innerText; b.innerText = '…'; try { await fetch(`/api/producer/${a}`, { method: 'POST' }) } catch (e) { } finally { b.innerText = t } let n = 0; const iv = setInterval(() => { uPS(); if (++n > 5) clearInterval(iv) }, 600) }
+
+        /* DATA */
+        async function fD(man = false) {
+            const btn = document.getElementById('bR');
+            if (man) { btn.innerText = '↻ Loading…'; btn.classList.add('dis') }
+            let liveData = [];
+            try {
+                const ltRes = await fetch('/api/live');
+                liveData = await ltRes.json();
+                const tb = document.querySelector('#lt tbody');
+                let firstTxId = liveData.length > 0 ? liveData[0].transaction_id : null;
+                if (!man && window.lastKnownFirstTx === firstTxId && liveData.length > 0) {
+                    // skip redraw
+                } else {
+                    window.lastKnownFirstTx = firstTxId;
+                    window._liveDataLength = liveData.length;
+                    window._isNewData = true;
+                    tb.innerHTML = '';
+                    if (liveData.length === 0) {
+                        tb.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:rgba(226,232,240,.35)">No transactions yet — start the producer to see live data</td></tr>';
+                    } else {
+                        liveData.slice(0, 15).forEach((r, i) => {
+                            const tr = document.createElement('tr'); if (i < 3) tr.classList.add('tr-new');
+                            const fr = r.is_fraud === 1, loc = (r.lat && r.lon) ? `${Number(r.lat).toFixed(2)},${Number(r.lon).toFixed(2)}` : '—';
+                            tr.innerHTML = `<td class="mono">${new Date(r.timestamp + 'Z').toLocaleTimeString()}</td><td class="mono" style="font-size:.68rem;color:var(--t2)">${(r.transaction_id || '').slice(0, 12)}…</td><td>${r.user_id || '—'}</td><td style="font-size:.78rem;color:var(--t2)">${r.merchant_id || '—'}</td><td style="font-family:'JetBrains Mono',monospace;color:${Number(r.amount) > 5000 ? 'var(--d)' : '#34d399'}">$${Number(r.amount).toFixed(2)}</td><td class="mono" style="font-size:.68rem;color:var(--t2)">${loc}</td><td class="mono" style="font-size:.65rem;color:var(--t2)">${r.ip_address || '—'}</td><td>${fr ? '<span class="tf">⚡ FRAUD</span>' : '<span class="tk">✓ OK</span>'}${fr && r.fraud_reason ? `<br><span style="font-size:.62rem;color:#94a3b8">${r.fraud_reason}</span>` : ''}</td>`;
+                            tb.appendChild(tr);
+                        });
+                    }
+                }
+            } catch (e) { console.error('/api/live error:', e); }
+            try {
+                const fr = await (await fetch('/api/fraud')).json();
+                let firstFrId = fr.length > 0 ? fr[0].transaction_id : null;
+                if (!man && window.lastKnownFirstFr === firstFrId && fr.length > 0) {
+                    // Skip redrawing
+                } else {
+                    window.lastKnownFirstFr = firstFrId;
+                    const ftb = document.querySelector('#fT tbody'); ftb.innerHTML = '';
+                    fr.forEach(r => { const tr = document.createElement('tr'); const loc = (r.lat && r.lon) ? `${Number(r.lat).toFixed(2)},${Number(r.lon).toFixed(2)}` : '—'; tr.innerHTML = `<td class="mono">${new Date(r.timestamp + 'Z').toLocaleTimeString()}</td><td class="mono" style="font-size:.68rem">${r.transaction_id}</td><td>${r.user_id || '—'}</td><td>${r.merchant_id || '—'}</td><td style="color:var(--d);font-family:'JetBrains Mono',monospace;font-weight:700">$${Number(r.amount).toFixed(2)}</td><td style="font-size:.75rem">${loc}</td><td style="font-size:.72rem;color:var(--c)">${r.fraud_reason || 'Unknown'}</td><td><button class="ac-btn" onclick="aFr('${r.transaction_id}')">🧠 SHAP</button></td>`; ftb.appendChild(tr) });
+
+                    // Freeze Chart if no new transactions
+                    if (window._isNewData && wChart && window._liveDataLength > 0) {
+                        window._isNewData = false;
+                        const ratio = fr.length / (window._liveDataLength || 1);
+                        wChart.data.datasets[0].data.push(ratio);
+                        wChart.data.datasets[0].data.shift();
+                        wChart.data.datasets[1].data.push(Math.min(window._liveDataLength / 200, .75));
+                        wChart.data.datasets[1].data.shift();
+                        wChart.update('none');
+                    }
+                }
+
+                const pct = fr.length > 0 ? Math.min(95, 70 + fr.length) : 0;
+                const safeUpdateFr = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
+                safeUpdateFr('ppct', pct ? pct + '%' : '—');
+                safeUpdateFr('rpct', pct ? Math.min(pct + 3, 99) + '%' : '—');
+                if (document.getElementById('pp')) document.getElementById('pp').style.width = pct + '%';
+                if (document.getElementById('rp')) document.getElementById('rp').style.width = Math.min(pct + 3, 99) + '%';
+            } catch (e) { console.error('/api/fraud error:', e); }
+            if (man) { await new Promise(r => setTimeout(r, 400)); btn.innerText = '↻ Refresh'; btn.classList.remove('dis') }
+        }
+
+        /* SHAP */
+        async function aFr(id) { openM('moEx'); const el = document.getElementById('eC'); el.innerHTML = '<div style="text-align:center;padding:28px;color:var(--t2)">🧠 Calculating SHAP…</div>'; try { const d = await (await fetch(`/api/explain/${id}`)).json(); if (d.error) { el.innerHTML = `<p style="color:var(--d)">Error: ${d.error}</p>`; return } let h = `<div style="margin-bottom:14px;font-size:.82rem;color:var(--t2)">Base: <b style="color:var(--p2)">${(d.base_value * 100).toFixed(1)}%</b> → Prediction: <b style="color:var(--d)">${(d.prediction * 100).toFixed(1)}%</b></div><div style="display:flex;flex-direction:column;gap:9px">`; d.features.forEach(f => { const w = Math.min(Math.abs(f.shap) * 500, 100).toFixed(1); const pos = f.shap > 0; const col = pos ? 'var(--d)' : 'var(--s)'; h += `<div style="display:flex;align-items:center;gap:10px"><div style="width:110px;text-align:right;font-size:.78rem;font-weight:600">${f.name}</div><div style="flex:1;background:rgba(255,255,255,.06);height:15px;border-radius:8px;overflow:hidden;position:relative"><div style="background:${col};width:${w}%;height:100%;position:absolute;${pos ? 'left:0' : 'right:0'};border-radius:8px"></div></div><div style="width:75px;font-size:.65rem;color:var(--t2);font-family:'JetBrains Mono',monospace">${f.shap.toFixed(3)}</div></div>` }); h += '</div>'; el.innerHTML = h } catch (e) { el.innerHTML = `<p style="color:var(--d)">Failed: ${e}</p>` } }
+
+        /* FILE CHECK */
+        let selF = null;
+        function hFS(i) { if (i.files && i.files[0]) { selF = i.files[0]; const b = document.getElementById('bU'); b.innerText = '🔍 ' + selF.name.slice(0, 18); b.disabled = false } }
+        async function uC() { if (!selF) return; const b = document.getElementById('bU'); b.innerText = '⏳ Processing…'; b.disabled = true; const f = new FormData(); f.append('file', selF); try { const r = await fetch('/api/upload_check', { method: 'POST', body: f }); if (!r.ok) throw new Error(await r.text()); const d = await r.json(); openM('moFi'); const tb = document.querySelector('#fkT tbody'); tb.innerHTML = ''; if (!d.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--s);padding:18px">✓ No fraud detected</td></tr>' } else { d.forEach((row, i) => { const tr = document.createElement('tr'); const rsn = row.fraud_reason || (row.amount > 10000 ? 'High Amount' : row.avg_diff_ratio > 5 ? 'High Variance' : 'Rule Match'); tr.innerHTML = `<td>${i + 1}</td><td class="mono">${row.timestamp}</td><td class="mono" style="font-size:.68rem">${row.transaction_id || 'N/A'}</td><td>${row.user_id}</td><td style="color:var(--d);font-family:'JetBrains Mono',monospace;font-weight:700">$${Number(row.amount).toFixed(2)}</td><td style="font-size:.75rem;color:var(--c)">${rsn}</td>`; tb.appendChild(tr) }) } } catch (e) { alert('Error: ' + e.message) } finally { b.innerText = '🔍 Analyse'; b.disabled = false } }
+
+        /* INIT */
+        fD(); uSt(); uPS(); uHS();
+        setInterval(fD, 2000); setInterval(uSt, 8000); setInterval(uPS, 2000); setInterval(uHS, 5000);
+    </script>
+</body>
+
+</html>

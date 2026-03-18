@@ -1,0 +1,85 @@
+# Maximalist Fraud Detection Configuration
+
+data:
+  num_samples: 100000  # Testing with 6GB RAM allocation
+  fraud_ratio: 0.05
+  random_seed: 42
+  patterns:
+    - structuring
+    - card_testing
+    - account_takeover
+    - high_risk_hour
+    - high_value
+
+features:
+  # Base
+  - amount
+  # NOTE: user_id and terminal_id removed - string identifiers, not usable numeric features
+  # Temporal
+  - hour_sin
+  - hour_cos
+  - day_of_week
+  - is_weekend
+  # Velocity
+  - tx_count_1h
+  - tx_count_24h
+  - amount_last_1h
+  # Statistical / Deviations
+  - user_amount_mean
+  - user_amount_std
+  - amount_z_score
+  - avg_diff_ratio
+  # Terminal
+  - terminal_fraud_rate
+  # Interactions
+  # Interactions
+  - amount_x_tx_count
+  # PCA Features
+  - V1
+  - V2
+  - V3
+  - V4
+  - V5
+  - V6
+  - V7
+  - V8
+  - V9
+  - V10
+  - V11
+  - V12
+  - V13
+  - V14
+  - V15
+  - V16
+  - V17
+  - V18
+  - V19
+  - V20
+  - V21
+  - V22
+  - V23
+  - V24
+  - V25
+  - V26
+  - V27
+  - V28
+
+model_params:
+  # Base XGBoost (will be overridden by Optuna)
+  xgboost:
+    n_estimators: 200
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    scale_pos_weight: 19 # Balanced for 5% fraud
+
+training:
+  test_size: 0.2
+  use_smote: true   # SMOTE oversamples minority (fraud) class to directly boost Recall
+  hyperparameter_tuning: true
+  n_tuning_trials: 20  # More trials = better Optuna hyperparameters
+
+streaming:
+  batch_interval: "10 seconds"
+  watermark: "10 minutes"
+  window_duration: "1 hour"

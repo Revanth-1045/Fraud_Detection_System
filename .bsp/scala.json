@@ -1,0 +1,27 @@
+{
+  "name": "scala",
+  "argv": [
+    "C:\\Users\\hemke\\scoop\\apps\\scala\\current\\libexec\\scala-cli.exe",
+    "--cli-default-scala-version",
+    "3.7.4",
+    "--repository",
+    "file:///C:/Users/hemke/scoop/apps/scala/current/maven2",
+    "--prog-name",
+    "scala",
+    "--skip-cli-updates",
+    "bsp",
+    "--json-options",
+    "C:\\Users\\hemke\\Downloads\\PROJECT - Copy\\PROJECT - Copy\\.scala-build\\ide-options-v2.json",
+    "--json-launcher-options",
+    "C:\\Users\\hemke\\Downloads\\PROJECT - Copy\\PROJECT - Copy\\.scala-build\\ide-launcher-options.json",
+    "--envs-file",
+    "C:\\Users\\hemke\\Downloads\\PROJECT - Copy\\PROJECT - Copy\\.scala-build\\ide-envs.json",
+    "C:\\Users\\hemke\\Downloads\\PROJECT - Copy\\PROJECT - Copy"
+  ],
+  "version": "1.9.1",
+  "bspVersion": "2.1.1",
+  "languages": [
+    "scala",
+    "java"
+  ]
+}
